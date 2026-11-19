@@ -1,0 +1,6 @@
+export const SunIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="4.5" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>;
+export const MoonIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg>;
+export const MosqueIcon = () => <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.3 1.3 1.4 2 1.4 3.2A1.4 1.4 0 0 1 12 6.6a1.4 1.4 0 0 1-1.4-1.4C10.6 4 11.7 3.3 12 2zM12 7.5c3.6 0 6.3 2.6 6.3 5.7V14H5.7v-.8C5.7 10.1 8.4 7.5 12 7.5zM4 15h16v6h-5.5v-3a2.5 2.5 0 0 0-5 0v3H4z" /></svg>;
+export const ClockIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></svg>;
+export const CheckIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 12.5l4 4L18 8" /></svg>;
+export const HomeIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></svg>;
