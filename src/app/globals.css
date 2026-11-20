@@ -639,3 +639,20 @@ textarea.k-in{resize:vertical;line-height:1.45}
 .cat-bubble b{display:block;font-family:var(--font-fredoka),var(--font-nunito),sans-serif;font-weight:600;font-size:14.5px;line-height:1.2;overflow-wrap:anywhere}
 .cat-bubble small{display:block;font-weight:700;font-size:11.5px;color:#9A6B45;margin-top:2px}
 .cat-bubble .go{display:block;font-weight:800;font-size:11px;color:#C0621C;margin-top:3px}
+
+/* backup & sync */
+.bk-sec{padding-top:12px;margin-top:12px;border-top:1.5px dashed #EBD3B0}
+.bk-sec:first-of-type{border-top:0;margin-top:0;padding-top:0}
+.bk-sec h3{font-family:var(--font-fredoka),var(--font-nunito),sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#B5521C}
+.bk-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:16px;background:#F7E4C3;margin:8px 0}
+.bk-row>div{display:flex;flex-direction:column;min-width:0}
+.bk-row b{font-family:var(--font-fredoka),var(--font-nunito),sans-serif;font-weight:600;font-size:15px;overflow-wrap:anywhere}
+.bk-row small{font-weight:700;font-size:12px;color:#8A6346;line-height:1.35}
+.bk-row>button,.bk-row>label{flex:none}
+.bk-ok{flex:none;font-weight:800;font-size:13px;color:#4F6A1E}
+label.ghost-btn{display:inline-block}
+.ghost-btn.danger{background:#B5442A;border-color:#B5442A;color:#FFF6E8}
+.bk-restore{padding:12px;border-radius:16px;border:2px solid #E9A23B;background:#FFFBF4;display:flex;flex-direction:column;gap:8px}
+.bk-restore small{font-weight:700;font-size:12px;color:#8A6346}
+.bk-form{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+@media (max-width:520px){.bk-row{flex-direction:column;align-items:stretch}.bk-row>button,.bk-row>label{align-self:flex-start}}

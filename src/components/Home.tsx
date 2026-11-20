@@ -23,6 +23,9 @@ import { Sheet } from "./Sheet";
 import { TimePreview } from "./TimePreview";
 import { ArrangeBar, ArrangeIcon, DrawerSheet, SpotSheet } from "./Arrange";
 import { Onboarding, type OnboardResult } from "./Onboarding";
+import { BackupSheet } from "./Backup";
+import { useAutoSync } from "@/lib/sync";
+import { askPersistence } from "@/lib/backup";
 
 export function Home() {
   const { loaded: profileLoaded, profile, save: saveProfile } = useProfile();
@@ -54,6 +57,8 @@ export function Home() {
   const [spotSheet, setSpotSheet] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [backupOpen, setBackupOpen] = useState(false);
+  useAutoSync();
   const [reveal, setReveal] = useState(false);
   const onboarding = profileLoaded && (!profile || editing);
   const ready = profileLoaded && loaded && !!profile;
@@ -64,7 +69,7 @@ export function Home() {
     saveProfile(p);
     save(applyPicks(layout, theme, picked));
     setEditing(false);
-    if (first) { setReveal(true); setTimeout(() => setReveal(false), 4200); setTimeout(() => showToast(`Welcome home, ${p.name} ✨`), 1900); }
+    if (first) { askPersistence().catch(() => {}); setReveal(true); setTimeout(() => setReveal(false), 4200); setTimeout(() => showToast(`Welcome home, ${p.name} ✨`), 1900); }
   }, [profile, saveProfile, save, layout, theme]);
 
   function showToast(msg: string) { setToast(msg); }
@@ -163,12 +168,13 @@ export function Home() {
       <Sheet kind={sheet} surprise={surprise} focus={focus} onClose={leave} />
       <SpotSheet theme={theme} layout={layout} spot={spotSheet} onClose={() => setSpotSheet(null)}
         onPlace={p => spotSheet && placeOn(spotSheet, p)} onClear={() => { if (spotSheet) save(clearSpot(layout, spotSheet)); }} />
-      <DrawerSheet open={drawerOpen} layout={layout} onClose={() => setDrawerOpen(false)} onEdit={() => { setDrawerOpen(false); setEditing(true); }}
+      <DrawerSheet open={drawerOpen} layout={layout} onClose={() => setDrawerOpen(false)} onEdit={() => { setDrawerOpen(false); setEditing(true); }} onBackup={() => { setDrawerOpen(false); setBackupOpen(true); }}
         onOpen={id => { setDrawerOpen(false); openTracker(id); }} onArrange={() => { setDrawerOpen(false); setArranging(true); }} />
       <button id="arrangeBtn" className={arranging ? "on" : ""} aria-pressed={arranging} aria-label={arranging ? "Done arranging" : "Arrange the room"} title="Arrange the room"
         onClick={() => setArranging(a => !a)}><ArrangeIcon /></button>
       <TimePreview min={min} preview={clock.preview} setPreview={clock.setPreview} />
       </>}
+      <BackupSheet open={backupOpen} onClose={() => setBackupOpen(false)} />
       <div id="toast" className={toast ? "show" : ""} role="status" aria-live="polite">{toast}</div>
     </>
   );

@@ -11,7 +11,7 @@ export function TrackerIcon({ t, size = 18 }: { t: Tracker; size?: number }) {
 const Chip = ({ t }: { t: Tracker }) => <span className="tchip" style={{ background: t.colour, color: t.deep }}><TrackerIcon t={t} /></span>;
 
 /** A small card over the room, closed with Escape or a click outside. */
-function Modal({ open, title, eyebrow, onClose, children, wide }: { open: boolean; title: string; eyebrow: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
+export function Modal({ open, title, eyebrow, onClose, children, wide }: { open: boolean; title: string; eyebrow: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   const card = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -76,10 +76,10 @@ export function SpotSheet({ theme, layout, spot, onPlace, onClear, onClose }: Sp
   );
 }
 
-type DrawerProps = { open: boolean; layout: Layout; onOpen: (tracker: string) => void; onArrange: () => void; onEdit: () => void; onClose: () => void };
+type DrawerProps = { open: boolean; layout: Layout; onOpen: (tracker: string) => void; onArrange: () => void; onEdit: () => void; onBackup: () => void; onClose: () => void };
 
 /** Trackers you use that aren't in the room. They open from here. */
-export function DrawerSheet({ open, layout, onOpen, onArrange, onEdit, onClose }: DrawerProps) {
+export function DrawerSheet({ open, layout, onOpen, onArrange, onEdit, onBackup, onClose }: DrawerProps) {
   const items = inDrawer(layout).map(id => TRACKER[id]);
   return (
     <Modal open={open} eyebrow="Drawer" title="In the drawer" onClose={onClose}>
@@ -88,7 +88,7 @@ export function DrawerSheet({ open, layout, onOpen, onArrange, onEdit, onClose }
           {items.map(t => <button key={t.id} className="tcard" onClick={() => onOpen(t.id)}><Chip t={t} /><span><b>{t.title}</b><small>{t.sub}</small></span></button>)}
         </div>
       ) : <p className="mnote">Nothing here yet. When you take a tracker out of the room, it waits here.</p>}
-      <div className="mrow"><button className="mbtn" onClick={onArrange}>Arrange the room</button><button className="ghost-btn" onClick={onEdit}>Change trackers, name or place</button></div>
+      <div className="mrow"><button className="mbtn" onClick={onArrange}>Arrange the room</button><button className="ghost-btn" onClick={onEdit}>Change trackers, name or place</button><button className="ghost-btn" onClick={onBackup}>Backup & sync</button></div>
     </Modal>
   );
 }

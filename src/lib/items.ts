@@ -16,7 +16,11 @@ export async function updateItem(id: string, f: Record<string, unknown>, extra: 
   if (!cur) return;
   await db.items.put({ ...cur, ...extra, f: { ...cur.f, ...f }, updated: Date.now() });
 }
-export const removeItem = (id: string) => db.items.delete(id);
+/** Delete a record, and remember the deletion for sync. */
+export const removeItem = (id: string) => db.transaction("rw", db.items, db.tombstones, async () => {
+  await db.items.delete(id);
+  await db.tombstones.put({ id, at: Date.now() });
+});
 
 /** Upsert the single record of a kind for a day (a mood check-in, a water count, a habit day…). */
 export async function setDayItem(tracker: string, kind: string, date: string, f: Record<string, unknown>) {

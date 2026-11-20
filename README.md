@@ -27,7 +27,7 @@ npm run build      # production build
 
 ## Next stages
 
-- In-app cat, then sync and backup (Supabase), then credits and settings.
+- Credits and settings, then a soft launch.
 
 ## Project map
 
@@ -49,6 +49,16 @@ npm run build      # production build
 | `public/quran/en.json`, `src/data/surahs.ts` | Quran text and surah index, built by `node scripts/build-quran.mjs` from `quran-json` (CC BY 4.0: Uthmani text from quranenc.com, English by Saheeh International) |
 | `src/data/library.ts` | Topics for the Deen library (titles only; to be reviewed) |
 | `public/sw.js` | Service worker: works offline once installed |
+
+## Backup and sync
+
+- **Backup** works with no account: Drawer → Backup & sync → Download backup. The file has everything, photos included. Restore can add to what's on the device (newer copies win) or replace it. The same sheet asks the browser to protect the site's storage.
+- **Sync** is optional and uses Supabase (sign-in by email; rows protected by row-level security; photos in a private bucket; deletions carry across devices; the newer copy wins). To switch it on:
+  1. Create a Supabase project. In **SQL Editor**, run `supabase/schema.sql`.
+  2. In **Authentication → URL Configuration**, add your site's address (and `http://localhost:3000`) to the redirect URLs.
+  3. Optional, for the installed app: in **Authentication → Email Templates → Magic Link**, add `{{ .Token }}` so the email also carries a 6-digit code.
+  4. Copy `.env.example` to `.env.local` and fill in the project URL and anon key (Project Settings → API). On Vercel, add the same two variables.
+- The sync engine is in `src/lib/sync/engine.ts` (tested with an in-memory cloud in `sync.test.ts`); the Supabase side is `src/lib/sync/supabase.ts`.
 
 ## Deploy
 
