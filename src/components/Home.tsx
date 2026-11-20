@@ -9,7 +9,8 @@ import { addDays, fmtMin } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { demoDay, isPrayed, togglePrayed } from "@/lib/salah";
 import { SURPRISES, TRACKER } from "@/room/catalogue";
-import { clearSpot, inDrawer, place, spotOf, type Placement } from "@/room/layout";
+import { applyPicks, clearSpot, inDrawer, place, spotOf, type Placement } from "@/room/layout";
+import { FALLBACK, useProfile } from "@/lib/profile";
 import { useLayout } from "@/room/useLayout";
 import { Sky } from "./Sky";
 import { Room } from "./Room";
@@ -19,9 +20,12 @@ import { Diary } from "./Diary";
 import { Sheet } from "./Sheet";
 import { TimePreview } from "./TimePreview";
 import { ArrangeBar, ArrangeIcon, DrawerSheet, SpotSheet } from "./Arrange";
+import { Onboarding, type OnboardResult } from "./Onboarding";
 
 export function Home() {
-  const clock = useClock();
+  const { loaded: profileLoaded, profile, save: saveProfile } = useProfile();
+  const where = profile ?? FALLBACK;
+  const clock = useClock(where.place, where.prayer);
   const { P, min, today } = clock;
   const [toast, setToast] = useState("");
   const focus = useFocus(task => showToast(`Focus done${task ? ": " + task : ""}. Take a little break ☕`));
@@ -44,6 +48,19 @@ export function Home() {
   const [arranging, setArranging] = useState(false);
   const [spotSheet, setSpotSheet] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [reveal, setReveal] = useState(false);
+  const onboarding = profileLoaded && (!profile || editing);
+  const ready = profileLoaded && loaded && !!profile;
+
+  /** Save onboarding (or edited details), set the room up for the picks, and let the room build itself the first time. */
+  const finishOnboarding = useCallback(({ profile: p, picked }: OnboardResult) => {
+    const first = !profile;
+    saveProfile(p);
+    save(applyPicks(layout, theme, picked));
+    setEditing(false);
+    if (first) { setReveal(true); setTimeout(() => setReveal(false), 4200); setTimeout(() => showToast(`Welcome home, ${p.name} ✨`), 1900); }
+  }, [profile, saveProfile, save, layout, theme]);
 
   function showToast(msg: string) { setToast(msg); }
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(""), 4200); return () => clearTimeout(t); }, [toast]);
@@ -106,11 +123,13 @@ export function Home() {
   return (
     <>
       <Sky sky={sky} P={P} min={min} />
+      {onboarding && <Onboarding key={editing ? "edit" : "new"} onDone={finishOnboarding}
+        initial={editing && profile ? { profile, picked: layout.picked } : undefined} onCancel={() => setEditing(false)} />}
+      {ready && !(onboarding && !editing) && <>
       <main>
-        <Header P={P} min={min} sky={sky} showPrayer={hasDeen} />
-        {loaded && <Room theme={theme} layout={layout} arranging={arranging} sky={sky} P={P} min={min} prayedDots={prayedDots} focus={focus} label={label} onEnter={enter}
+        <Header P={P} min={min} sky={sky} name={profile.name} showPrayer={hasDeen} />
+        {loaded && <Room theme={theme} layout={layout} arranging={arranging} name={profile.name} reveal={reveal} sky={sky} P={P} min={min} prayedDots={prayedDots} focus={focus} label={label} onEnter={enter}
           zoomSpot={zoom?.spot ?? null} zoomFade={!!zoom?.fade} />}
-        {!loaded && <div className="stage" />}
         {arranging ? <ArrangeBar layout={layout} onDone={() => setArranging(false)} /> : (
           <Pills P={P} min={min} today={todayDay} curDay={curDay} focus={focus} showPrayer={hasDeen} drawerCount={drawerCount}
             onToggle={() => cur && togglePrayed(curDate, cur.name, P)}
@@ -121,12 +140,13 @@ export function Home() {
       <Sheet kind={sheet} surprise={surprise} focus={focus} onClose={leave} />
       <SpotSheet theme={theme} layout={layout} spot={spotSheet} onClose={() => setSpotSheet(null)}
         onPlace={p => spotSheet && placeOn(spotSheet, p)} onClear={() => { if (spotSheet) save(clearSpot(layout, spotSheet)); }} />
-      <DrawerSheet open={drawerOpen} layout={layout} onClose={() => setDrawerOpen(false)}
+      <DrawerSheet open={drawerOpen} layout={layout} onClose={() => setDrawerOpen(false)} onEdit={() => { setDrawerOpen(false); setEditing(true); }}
         onOpen={id => { setDrawerOpen(false); openTracker(id); }} onArrange={() => { setDrawerOpen(false); setArranging(true); }} />
       <button id="arrangeBtn" className={arranging ? "on" : ""} aria-pressed={arranging} aria-label={arranging ? "Done arranging" : "Arrange the room"} title="Arrange the room"
         onClick={() => setArranging(a => !a)}><ArrangeIcon /></button>
-      <div id="toast" className={toast ? "show" : ""} role="status" aria-live="polite">{toast}</div>
       <TimePreview min={min} preview={clock.preview} setPreview={clock.setPreview} />
+      </>}
+      <div id="toast" className={toast ? "show" : ""} role="status" aria-live="polite">{toast}</div>
     </>
   );
 }

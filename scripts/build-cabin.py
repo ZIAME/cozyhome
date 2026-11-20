@@ -60,6 +60,10 @@ parts[pos[76]] = ''
 parts[pos[77]] = '<path d="M153.5 139.27L222.397 99.5V101.6L153.5 141.37Z" fill="#8A3E28" opacity=".55"/>'
 post.setdefault(pos[77], []).append('<g id="winSky" clip-path="url(#winClip)" pointer-events="none"></g>')
 
+# name frame on the left wall: the hand-lettered "Afra's Home" becomes text the app fills with the owner's name
+for i in range(60, 74): parts[pos[i]] = ''
+post.setdefault(pos[73], []).append('<g id="nameplate" transform="matrix(1 -0.5774 0 1 59 184.5)" pointer-events="none"></g>')
+
 # ---------- 3. spots ----------
 # Each spot is a place in the room where a tracker's object can sit (see src/room/themes/cabin.ts).
 #   hot:    the path ranges you can hover and click (furniture included)

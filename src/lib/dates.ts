@@ -14,7 +14,8 @@ export const prettyDate = (s: string, opt: Intl.DateTimeFormatOptions = { weekda
   fromYmd(s).toLocaleDateString("en-GB", opt);
 /** Minutes after midnight → "5:08 pm" */
 export const fmtMin = (m: number) => {
-  const h = Math.floor(m / 60) % 24, mm = Math.floor(m % 60);
+  m = ((m % 1440) + 1440) % 1440; // times can fall on the day before or after
+  const h = Math.floor(m / 60), mm = Math.floor(m % 60);
   return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
 };
 export const minutesNow = (d = new Date()) => d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;

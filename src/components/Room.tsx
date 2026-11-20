@@ -11,6 +11,10 @@ import type { FocusView } from "@/hooks/useFocus";
 export type RoomLabel = { title: string; sub: string };
 type Props = {
   theme: Theme; layout: Layout; arranging: boolean;
+  /** Written on the theme's name frame. */
+  name: string;
+  /** Play the "room builds itself" animation (after onboarding). */
+  reveal: boolean;
   sky: SkyState; P: DayTimes; min: number;
   prayedDots: boolean[];
   focus: FocusView;
@@ -53,7 +57,7 @@ const BADGE = (x: number, y: number, spot: string, colour: string | null) =>
  * Every object in the room lifts, glows and shows a label; the screens, window, lamps and clock are live.
  * In arrange mode every spot is clickable and shows a badge (+ when empty).
  */
-export function Room({ theme, layout, arranging, sky, P, min, prayedDots, focus, label, onEnter, zoomSpot, zoomFade }: Props) {
+export function Room({ theme, layout, arranging, name, reveal, sky, P, min, prayedDots, focus, label, onEnter, zoomSpot, zoomFade }: Props) {
   const stage = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<string | null>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -117,6 +121,7 @@ export function Room({ theme, layout, arranging, sky, P, min, prayedDots, focus,
     }
     if (!arranging) hot.push(...theme.fixed.map(f => f.id));
     const isHot = new Set(hot);
+    hot.forEach((id, i) => all<SVGGElement>(`.spot[data-spot="${id}"]`).forEach(g => g.style.setProperty("--d", `${i * 0.11}s`)));
     const firsts = new Set<string>();
     all<SVGGElement>(".spot").forEach(g => {
       const id = g.dataset.spot!, on = isHot.has(id);
@@ -125,7 +130,6 @@ export function Room({ theme, layout, arranging, sky, P, min, prayedDots, focus,
       if (first) { g.setAttribute("tabindex", "0"); g.setAttribute("role", "button"); g.setAttribute("aria-label", labelRef.current(id).title); }
       else { g.removeAttribute("tabindex"); g.removeAttribute("role"); g.removeAttribute("aria-label"); }
     });
-    root.classList.toggle("arranging", arranging);
     // sparkles hint at clickable things; in arrange mode, badges mark every spot
     const layer = root.querySelector("#sparkles")!;
     layer.innerHTML = hot.map((id, i) => {
@@ -138,6 +142,19 @@ export function Room({ theme, layout, arranging, sky, P, min, prayedDots, focus,
     }).join("");
     setActive(a => (a && isHot.has(a) ? a : null));
   }, [theme, layout, arranging, prayedDots]);
+
+  // the owner's name on the wall frame
+  useEffect(() => {
+    const g = stage.current?.querySelector("#nameplate"), np = theme.nameplate;
+    if (!g || !np) return;
+    const n = name.trim(), first = n ? (/s$/i.test(n) ? `${n}’` : `${n}’s`) : "My";
+    const fs = (text: string, max: number) => Math.min(max, (np.w * 0.9) / (Math.max(text.length, 1) * 0.56));
+    const esc = (t: string) => t.replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
+    const f1 = fs(first, 4.2), f2 = Math.min(fs("Home", 4.2), f1 * 1.15);
+    g.innerHTML = `<g font-family="Fredoka, Nunito, sans-serif" font-weight="600" fill="${np.colour}" text-anchor="middle">` +
+      `<text x="${np.w / 2}" y="${np.h * 0.45}" font-size="${f1.toFixed(2)}">${esc(first)}</text>` +
+      `<text x="${np.w / 2}" y="${np.h * 0.45 + f1 * 0.4 + f2}" font-size="${f2.toFixed(2)}">Home</text></g>`;
+  }, [name, theme]);
 
   // highlight + label for the active object
   useEffect(() => {
@@ -159,7 +176,6 @@ export function Room({ theme, layout, arranging, sky, P, min, prayedDots, focus,
     q("#lamps")?.setAttribute("opacity", sky.l.toFixed(3));
     q("#swTop")?.setAttribute("stop-color", sky.wt); q("#swBot")?.setAttribute("stop-color", sky.wb);
     const win = q("#winSky"); if (win) win.innerHTML = windowSky(min, P, sky);
-    root.classList.toggle("lights", sky.l > 0.4);
   }, [sky, min, P]);
 
   // the wall clock: real time when idle, a countdown wedge while focusing
@@ -206,7 +222,7 @@ export function Room({ theme, layout, arranging, sky, P, min, prayedDots, focus,
 
   const L = active ? label(active) : null;
   return (
-    <div className="stage" ref={stage}>
+    <div className={"stage" + (reveal ? " reveal" : "") + (arranging ? " arranging" : "") + (sky.l > 0.4 ? " lights" : "")} ref={stage}>
       <div className="room-svg" dangerouslySetInnerHTML={html} />
       <div className="shadow-floor" />
       <div id="label" className={L && pos ? "show" : ""} style={pos ? { left: pos.x, top: pos.y } : undefined} role="status" aria-live="polite">

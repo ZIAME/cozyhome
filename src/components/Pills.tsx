@@ -45,11 +45,9 @@ export function Pills({ P, min, today, curDay, focus, showPrayer, drawerCount, o
         <span className="t"><span className="n">{cur ? `${cur.name} time` : `Next: ${next.name}`}</span><span className="l">{cur ? `until ${fmtMin(cur.end)}` : `at ${fmtMin(next.at)}`}</span></span>
       </button></div>
       </>}
-      {drawerCount > 0 && (
-        <div className="pill"><button className="pmain" onClick={() => onGo("drawer")}>
-          <span className="ic c4"><DrawerIcon /></span><span className="t"><span className="n">{drawerCount}</span><span className="l">in the drawer</span></span>
-        </button></div>
-      )}
+      <div className="pill"><button className="pmain" onClick={() => onGo("drawer")}>
+        <span className="ic c4"><DrawerIcon /></span><span className="t"><span className="n">{drawerCount || "Drawer"}</span><span className="l">{drawerCount ? "in the drawer" : "& your details"}</span></span>
+      </button></div>
     </nav>
   );
 }

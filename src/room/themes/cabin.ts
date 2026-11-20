@@ -34,4 +34,5 @@ export const CABIN: Theme = {
     { id: "clock", tracker: "focus", label: "Wall clock" },
     { id: "gift", tracker: "surprise", label: "Gift box" },
   ],
+  nameplate: { w: 13, h: 28.5, colour: "#FBF1E1" },
 };

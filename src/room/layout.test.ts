@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CABIN } from "./themes/cabin";
 import { TRACKER, TRACKERS } from "./catalogue";
-import { ROOM_CAP, canPlace, clearSpot, defaultLayout, inDrawer, inRoom, nativeLayout, normalize, pick, place, spotOf, unpick, type Layout } from "./layout";
+import { ROOM_CAP, applyPicks, canPlace, clearSpot, defaultLayout, inDrawer, inRoom, nativeLayout, normalize, pick, place, spotOf, unpick, type Layout } from "./layout";
 
 const T = CABIN;
 const ok = (r: ReturnType<typeof place>) => { if (!r.ok) throw new Error(r.error); return r.layout; };
@@ -119,5 +119,42 @@ describe("the cabin theme", () => {
   });
   it("has no Fiqh section anywhere", () => {
     expect(TRACKERS.flatMap(t => t.tabs.map(x => x.id + x.label)).join(" ").toLowerCase()).not.toContain("fiqh");
+  });
+});
+
+describe("applyPicks (setting the room up)", () => {
+  const empty = { v: 1 as const, theme: "cabin", picked: [], spots: {} };
+  it("gives the prototype's room for the Muslim creative set", () => {
+    const l = applyPicks(empty, T, ["deen", "journal", "design", "content", "planner", "hobbies", "today"]);
+    expect(l.spots["rug"]).toEqual({ tracker: "deen", tab: "salah" });
+    expect(l.spots["rug-book"]).toEqual({ tracker: "deen", tab: "quran" });
+    expect(l.spots["wall-shelf"]).toEqual({ tracker: "deen", tab: "library" });
+    expect(l.spots["table"]).toEqual({ tracker: "journal" });
+    expect(Object.values(l.spots).filter(p => p.tracker.match(/design|content|today/)).length).toBe(3);
+    expect(["screen-left", "screen-mid", "screen-right"].every(s => l.spots[s])).toBe(true);
+  });
+  it("puts trackers on spots that suit them", () => {
+    const l = applyPicks(empty, T, ["study", "habits", "reading", "fitness"]);
+    expect(T.spots.find(s => s.id === spotOf(l, "study"))!.kind).toBe("screen");
+    expect(T.spots.find(s => s.id === spotOf(l, "habits"))!.kind).toBe("wall");
+    expect(T.spots.find(s => s.id === spotOf(l, "reading"))!.kind).toBe("shelf");
+    expect(T.spots.find(s => s.id === spotOf(l, "fitness"))!.kind).toBe("floor");
+  });
+  it("sends trackers past the cap to the drawer, in pick order", () => {
+    const all = TRACKERS.filter(t => !t.always).map(t => t.id);
+    const l = applyPicks(empty, T, all);
+    expect(inRoom(l)).toHaveLength(ROOM_CAP);
+    expect(inDrawer(l)).toEqual(all.slice(ROOM_CAP));
+  });
+  it("keeps what's already placed and drops what's unpicked", () => {
+    const before = ok(place(defaultLayout(T), T, "frame-a", { tracker: "mood" }));
+    const l = applyPicks(before, T, ["mood", "deen", "reading"]);
+    expect(l.spots["frame-a"]).toEqual({ tracker: "mood" });
+    expect(l.spots["rug"]).toEqual({ tracker: "deen", tab: "salah" });
+    expect(inRoom(l).sort()).toEqual(["deen", "mood", "reading"]);
+    expect(l.spots["table"]).toBeUndefined();
+  });
+  it("ignores always-on and unknown trackers", () => {
+    expect(applyPicks(empty, T, ["focus", "nope"]).picked).toEqual([]);
   });
 });

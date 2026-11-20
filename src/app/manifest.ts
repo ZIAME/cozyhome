@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Afra's Home",
-    short_name: "Afra's Home",
-    description: "A cozy room for deen, journaling, creative work and planning.",
+    name: "Cozy Home",
+    short_name: "Cozy Home",
+    description: "A cozy room that keeps track of the parts of your life.",
     start_url: "/",
     display: "standalone",
     background_color: "#EFE9DF",

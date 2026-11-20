@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { OWNER_NAME } from "@/lib/config";
 import { PHASE_NAME, type SkyState } from "@/lib/sky";
 import { currentPrayer, nextPrayer, type DayTimes } from "@/lib/prayer";
 import { fmtMin } from "@/lib/dates";
@@ -13,7 +12,7 @@ export function prayerNowText(P: DayTimes, min: number) {
   return `Next: ${n.name} at ${fmtMin(n.at)}`;
 }
 
-export function Header({ P, min, sky, showPrayer = true }: { P: DayTimes; min: number; sky: SkyState; showPrayer?: boolean }) {
+export function Header({ P, min, sky, name, showPrayer = true }: { P: DayTimes; min: number; sky: SkyState; name: string; showPrayer?: boolean }) {
   const [dates, setDates] = useState({ g: "", h: "" });
   useEffect(() => {
     const d = new Date();
@@ -26,7 +25,7 @@ export function Header({ P, min, sky, showPrayer = true }: { P: DayTimes; min: n
   return (
     <header>
       <div>
-        <h1 className="greet">{g}, {OWNER_NAME}</h1>
+        <h1 className="greet">{name ? `${g}, ${name}` : g}</h1>
         <div className="dates"><span>{dates.g}</span>{dates.h && <><span className="dot-sep" /><span>{dates.h}</span></>}</div>
       </div>
       <div className="phase">{night ? <MoonIcon /> : <SunIcon />}<span>{PHASE_NAME[sky.key]}{showPrayer && <> · {prayerNowText(P, min)}</>}</span></div>

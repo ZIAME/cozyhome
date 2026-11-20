@@ -13,9 +13,9 @@ import { RegisterSW } from "@/components/RegisterSW";
 
 
 export const metadata: Metadata = {
-  title: "Afra's Home",
-  description: "A cozy room for deen, journaling, creative work and planning.",
-  appleWebApp: { capable: true, title: "Afra's Home", statusBarStyle: "black-translucent" },
+  title: "Cozy Home",
+  description: "A cozy room that keeps track of the parts of your life: deen, journaling, work, study and more.",
+  appleWebApp: { capable: true, title: "Cozy Home", statusBarStyle: "black-translucent" },
   icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
 };
 export const viewport: Viewport = { themeColor: "#3A2316", width: "device-width", initialScale: 1 };

@@ -112,3 +112,35 @@ export function normalize(raw: unknown, theme: Theme): Layout {
   }
   return l;
 }
+
+/**
+ * Set the room up for a list of picked trackers (onboarding, or changing your picks later).
+ * Trackers already in the room stay where they are; dropped ones leave. New ones fill free spots, in pick order,
+ * until the room holds ROOM_CAP trackers: first the spots the art drew for them, then spots of the kind that suits
+ * them (tracker.home), then any free spot. Whatever doesn't fit waits in the drawer.
+ */
+export function applyPicks(l: Layout, theme: Theme, picked: string[]): Layout {
+  const want = uniq(picked.filter(id => TRACKER[id] && !TRACKER[id].always));
+  const keep = new Set(want);
+  let out: Layout = { ...l, theme: theme.id, picked: want, spots: Object.fromEntries(Object.entries(l.spots).filter(([, p]) => keep.has(p.tracker))) };
+  const room = new Set(inRoom(out));
+  const incoming = want.filter(id => !room.has(id)).slice(0, Math.max(0, ROOM_CAP - room.size));
+  const free = () => theme.spots.filter(s => !out.spots[s.id]);
+  const put = (spot: string, p: Placement) => { const r = place(out, theme, spot, p); if (r.ok) out = r.layout; return r.ok; };
+  // 1. the art's own spots
+  const placed = new Set<string>();
+  for (const id of incoming) for (const s of free()) if (s.native?.tracker === id && put(s.id, { ...s.native })) placed.add(id);
+  // 2. a spot of a suitable kind, else 3. any free spot (frames last, so walls keep some decoration)
+  for (const id of incoming) {
+    if (placed.has(id)) continue;
+    const kinds = TRACKER[id].home;
+    const options = free().sort((a, b) => {
+      const ka = kinds.indexOf(a.kind), kb = kinds.indexOf(b.kind);
+      return (ka < 0 ? 99 : ka) - (kb < 0 ? 99 : kb) || Number(!!a.decor) - Number(!!b.decor);
+    });
+    if (options[0]) put(options[0].id, { tracker: id });
+  }
+  return out;
+}
+
+export const emptyLayout = (theme: Theme): Layout => ({ v: 1, theme: theme.id, picked: [], spots: {} });

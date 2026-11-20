@@ -76,10 +76,10 @@ export function SpotSheet({ theme, layout, spot, onPlace, onClear, onClose }: Sp
   );
 }
 
-type DrawerProps = { open: boolean; layout: Layout; onOpen: (tracker: string) => void; onArrange: () => void; onClose: () => void };
+type DrawerProps = { open: boolean; layout: Layout; onOpen: (tracker: string) => void; onArrange: () => void; onEdit: () => void; onClose: () => void };
 
 /** Trackers you use that aren't in the room. They open from here. */
-export function DrawerSheet({ open, layout, onOpen, onArrange, onClose }: DrawerProps) {
+export function DrawerSheet({ open, layout, onOpen, onArrange, onEdit, onClose }: DrawerProps) {
   const items = inDrawer(layout).map(id => TRACKER[id]);
   return (
     <Modal open={open} eyebrow="Drawer" title="In the drawer" onClose={onClose}>
@@ -88,7 +88,7 @@ export function DrawerSheet({ open, layout, onOpen, onArrange, onClose }: Drawer
           {items.map(t => <button key={t.id} className="tcard" onClick={() => onOpen(t.id)}><Chip t={t} /><span><b>{t.title}</b><small>{t.sub}</small></span></button>)}
         </div>
       ) : <p className="mnote">Nothing here yet. When you take a tracker out of the room, it waits here.</p>}
-      <button className="mbtn" onClick={onArrange}>Arrange the room</button>
+      <div className="mrow"><button className="mbtn" onClick={onArrange}>Arrange the room</button><button className="ghost-btn" onClick={onEdit}>Change trackers, name or place</button></div>
     </Modal>
   );
 }
