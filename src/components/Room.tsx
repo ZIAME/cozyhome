@@ -4,6 +4,8 @@ import type { Theme } from "@/room/theme";
 import type { Layout } from "@/room/layout";
 import { TRACKER } from "@/room/catalogue";
 import { drawProp, ghost, tintId } from "@/room/props";
+import type { NextTask } from "@/lib/due";
+import { Cat } from "./Cat";
 import type { SkyState } from "@/lib/sky";
 import type { DayTimes } from "@/lib/prayer";
 import type { FocusView } from "@/hooks/useFocus";
@@ -22,6 +24,8 @@ type Props = {
   label: (spot: string) => RoomLabel;
   onEnter: (spot: string) => void;
   zoomSpot: string | null; zoomFade: boolean;
+  /** The cat: what it suggests, whether it's sleeping time, and what tapping it opens. */
+  cat: { next: NextTask; night: boolean; onOpen: (t: NextTask) => void };
 };
 
 const sl = (x: number) => (x - 153.5) * 0.5774; // slant of the window glass
@@ -57,7 +61,7 @@ const BADGE = (x: number, y: number, spot: string, colour: string | null) =>
  * Every object in the room lifts, glows and shows a label; the screens, window, lamps and clock are live.
  * In arrange mode every spot is clickable and shows a badge (+ when empty).
  */
-export function Room({ theme, layout, arranging, name, reveal, sky, P, min, prayedDots, focus, label, onEnter, zoomSpot, zoomFade }: Props) {
+export function Room({ theme, layout, arranging, name, reveal, sky, P, min, prayedDots, focus, label, onEnter, zoomSpot, zoomFade, cat }: Props) {
   const stage = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<string | null>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -225,6 +229,7 @@ export function Room({ theme, layout, arranging, name, reveal, sky, P, min, pray
     <div className={"stage" + (reveal ? " reveal" : "") + (arranging ? " arranging" : "") + (sky.l > 0.4 ? " lights" : "")} ref={stage}>
       <div className="room-svg" dangerouslySetInnerHTML={html} />
       <div className="shadow-floor" />
+      <Cat stage={stage} hidden={arranging || reveal || !!zoomSpot} night={cat.night} next={cat.next} onOpen={cat.onOpen} />
       <div id="label" className={L && pos ? "show" : ""} style={pos ? { left: pos.x, top: pos.y } : undefined} role="status" aria-live="polite">
         <b>{L?.title}</b><small>{L?.sub}</small><span className="tap">{arranging ? "" : "Tap again to enter"}</span>
       </div>

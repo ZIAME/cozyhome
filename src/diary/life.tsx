@@ -9,6 +9,7 @@ import { isPrayed } from "@/lib/salah";
 import { FALLBACK, useProfile } from "@/lib/profile";
 import { useShared } from "@/lib/shared";
 import { useLayout } from "@/room/useLayout";
+import { useDueToday } from "@/lib/due";
 import { TRACKER } from "@/room/catalogue";
 import { Board, DeleteButton, Empty, Form, ItemList, Jar, PageHead, Section, Tag, daysUntil, dueText, prettyDay, streaks, type Field } from "./kit";
 import { Photo } from "./mind";
@@ -111,18 +112,6 @@ export function HabitsStreaksRight() {
 }
 
 // ================= Planner =================
-type Due = { id: string; title: string; from: string; when: string; done: boolean; toggle: () => void };
-/** Things due today or late from every room (work boards, assignments, content planned for today). */
-function useDueToday(day: string): Due[] {
-  const items = useItemsOf([["work", "task"], ["design", "task"], ["study", "assignment"], ["content", "post"]]);
-  return useMemo(() => (items ?? []).flatMap(it => {
-    const done = { work: "Done", design: "Done", study: "Done", content: "Posted" }[it.tracker] ?? "Done";
-    const when = str(it.tracker === "content" ? it.f.date : it.f.deadline);
-    if (!when || when > day || (it.f.status === done && when < day)) return [];
-    const isDone = it.f.status === done;
-    return [{ id: it.id, title: str(it.f.title) || "Untitled", from: TRACKER[it.tracker]?.title ?? it.tracker, when, done: isDone, toggle: () => updateItem(it.id, { status: isDone ? (it.tracker === "content" ? "Ready" : "To do") : done }) }];
-  }).sort((a, b) => a.when.localeCompare(b.when)), [items, day]);
-}
 const toMin = (s: string) => { const [h, m] = s.split(":").map(Number); return h * 60 + (m || 0); };
 export function PlannerTodayLeft() {
   const t = todayStr();

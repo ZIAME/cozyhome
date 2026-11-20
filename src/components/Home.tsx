@@ -12,6 +12,7 @@ import { demoDay, isPrayed, togglePrayed } from "@/lib/salah";
 import { SURPRISES, TRACKER } from "@/room/catalogue";
 import { applyPicks, clearSpot, inDrawer, place, spotOf, type Placement } from "@/room/layout";
 import { FALLBACK, useProfile } from "@/lib/profile";
+import { useNextTask, type NextTask } from "@/lib/due";
 import { useLayout } from "@/room/useLayout";
 import { Sky } from "./Sky";
 import { Room } from "./Room";
@@ -134,6 +135,14 @@ export function Home() {
   }, [layout, theme, save]);
 
   const drawerCount = inDrawer(layout).length;
+  const next = useNextTask();
+  // the cat sleeps from an hour and a half after Isha until Fajr
+  const catNight = min >= P.Isha + 90 || min < P.Fajr;
+  const onCat = useCallback((t: NextTask) => {
+    if (t) openTracker(t.open[0], t.open[1]);
+    else if (layout.picked.includes("planner")) openTracker("planner", "today");
+    else setDrawerOpen(true);
+  }, [openTracker, layout]);
   return (
     <>
       <Sky sky={sky} P={P} min={min} />
@@ -143,7 +152,7 @@ export function Home() {
       <main>
         <Header P={P} min={min} sky={sky} name={profile.name} showPrayer={hasDeen} />
         {loaded && <Room theme={theme} layout={layout} arranging={arranging} name={profile.name} reveal={reveal} sky={sky} P={P} min={min} prayedDots={prayedDots} focus={focus} label={label} onEnter={enter}
-          zoomSpot={zoom?.spot ?? null} zoomFade={!!zoom?.fade} />}
+          zoomSpot={zoom?.spot ?? null} zoomFade={!!zoom?.fade} cat={{ next, night: catNight, onOpen: onCat }} />}
         {arranging ? <ArrangeBar layout={layout} onDone={() => setArranging(false)} /> : (
           <Pills P={P} min={min} today={todayDay} curDay={curDay} focus={focus} showPrayer={hasDeen} drawerCount={drawerCount}
             onToggle={() => cur && togglePrayed(curDate, cur.name, P)}

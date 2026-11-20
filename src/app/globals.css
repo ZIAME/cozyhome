@@ -610,3 +610,32 @@ textarea.k-in{resize:vertical;line-height:1.45}
 .t-card b{font-family:var(--font-fredoka),var(--font-nunito),sans-serif;font-weight:700;font-size:36px;line-height:1;color:#B5521C;font-variant-numeric:tabular-nums}
 .t-card span{font-weight:800;font-size:13px;margin-top:4px}.t-card small{font-weight:700;font-size:11.5px;color:#9A6B45}
 @media (max-width:760px){.k-form{grid-template-columns:1fr}.k-board{grid-template-columns:repeat(var(--cols),minmax(140px,1fr))}}
+
+/* ===================== THE CAT ===================== */
+#cat{cursor:pointer;outline:none}
+#cat.gone{opacity:0;pointer-events:none;transition:opacity .3s}
+#cat:focus-visible{filter:drop-shadow(0 0 2px #FFF1C9) drop-shadow(0 0 5px #E9A23B)}
+#cat:hover{filter:drop-shadow(0 0 2px #FFF1C9) drop-shadow(0 0 6px rgba(255,200,110,.9))}
+.cat-walk .cat-legs-a{animation:catStep .42s ease-in-out infinite}
+.cat-walk .cat-legs-b{animation:catStep .42s ease-in-out infinite reverse}
+@keyframes catStep{0%,100%{transform:translateX(-1.2px)}50%{transform:translateX(1.2px)}}
+.cat-walk{animation:catBob .42s ease-in-out infinite}
+@keyframes catBob{50%{transform:translateY(-.5px)}}
+.cat-tail{transform-box:fill-box;transform-origin:0% 100%;animation:catTail 2.6s ease-in-out infinite}
+.cat.sit .cat-tail{transform-origin:0% 50%;animation-duration:3.4s}
+@keyframes catTail{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(8deg)}}
+.cat-eyes{transform-box:fill-box;transform-origin:center;animation:catBlink 5s infinite}
+@keyframes catBlink{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.cat.sleep>g{animation:catBreathe 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes catBreathe{50%{scale:1.03 1.06}}
+.cat-z text{animation:catZ 3s ease-in-out infinite}
+.cat-z text:nth-child(2){animation-delay:1.2s}
+@keyframes catZ{0%{opacity:0;transform:translateY(2px)}30%{opacity:.9}100%{opacity:0;transform:translateY(-5px)}}
+.cat-bubble{position:absolute;z-index:6;max-width:230px;transform:translate(-50%,calc(-100% - 12px)) scale(.9);opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .25s cubic-bezier(.3,1.6,.5,1);background:#FFF6E8;color:var(--cocoa);border-radius:16px;padding:8px 13px 9px;text-align:center;
+  box-shadow:0 10px 24px -8px rgba(58,35,22,.45),0 0 0 2px #E8862E;cursor:pointer}
+.cat-bubble.show{opacity:1;transform:translate(-50%,calc(-100% - 14px)) scale(1);pointer-events:auto}
+.cat-bubble::after{content:"";position:absolute;left:50%;bottom:-6px;width:11px;height:11px;margin-left:-5.5px;background:#FFF6E8;transform:rotate(45deg);box-shadow:2px 2px 0 0 #E8862E;border-radius:2px}
+.cat-bubble b{display:block;font-family:var(--font-fredoka),var(--font-nunito),sans-serif;font-weight:600;font-size:14.5px;line-height:1.2;overflow-wrap:anywhere}
+.cat-bubble small{display:block;font-weight:700;font-size:11.5px;color:#9A6B45;margin-top:2px}
+.cat-bubble .go{display:block;font-weight:800;font-size:11px;color:#C0621C;margin-top:3px}
