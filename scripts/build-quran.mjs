@@ -1,4 +1,4 @@
-// Copies the Quran text (quran-json, CC BY 4.0: Uthmani text from quranenc.com, English by Saheeh International)
+// Copies the Quran text (quran-json, CC BY-SA 4.0 per its LICENSE file: Uthmani text from quranenc.com, English by Saheeh International)
 // into public/quran/en.json (fetched when the Quran page opens) and writes the small surah index src/data/surahs.ts.
 // Run: node scripts/build-quran.mjs
 import { readFileSync, writeFileSync } from "node:fs";

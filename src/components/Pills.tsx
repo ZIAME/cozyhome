@@ -46,7 +46,7 @@ export function Pills({ P, min, today, curDay, focus, showPrayer, drawerCount, o
       </button></div>
       </>}
       <div className="pill"><button className="pmain" onClick={() => onGo("drawer")}>
-        <span className="ic c4"><DrawerIcon /></span><span className="t"><span className="n">{drawerCount || "Drawer"}</span><span className="l">{drawerCount ? "in the drawer" : "& your details"}</span></span>
+        <span className="ic c4"><DrawerIcon /></span><span className="t"><span className="n">{drawerCount || "Drawer"}</span><span className="l">{drawerCount ? "in the drawer" : "& settings"}</span></span>
       </button></div>
     </nav>
   );

@@ -26,6 +26,8 @@ import { Onboarding, type OnboardResult } from "./Onboarding";
 import { BackupSheet } from "./Backup";
 import { useAutoSync } from "@/lib/sync";
 import { askPersistence } from "@/lib/backup";
+import { useApplyDisplay, useDisplay } from "@/lib/display";
+import { SettingsSheet } from "./Settings";
 
 export function Home() {
   const { loaded: profileLoaded, profile, save: saveProfile } = useProfile();
@@ -58,6 +60,9 @@ export function Home() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [display] = useDisplay();
+  useApplyDisplay(display);
   useAutoSync();
   const [reveal, setReveal] = useState(false);
   const onboarding = profileLoaded && (!profile || editing);
@@ -168,11 +173,13 @@ export function Home() {
       <Sheet kind={sheet} surprise={surprise} focus={focus} onClose={leave} />
       <SpotSheet theme={theme} layout={layout} spot={spotSheet} onClose={() => setSpotSheet(null)}
         onPlace={p => spotSheet && placeOn(spotSheet, p)} onClear={() => { if (spotSheet) save(clearSpot(layout, spotSheet)); }} />
-      <DrawerSheet open={drawerOpen} layout={layout} onClose={() => setDrawerOpen(false)} onEdit={() => { setDrawerOpen(false); setEditing(true); }} onBackup={() => { setDrawerOpen(false); setBackupOpen(true); }}
+      <DrawerSheet open={drawerOpen} layout={layout} onClose={() => setDrawerOpen(false)} onSettings={() => { setDrawerOpen(false); setSettingsOpen(true); }}
         onOpen={id => { setDrawerOpen(false); openTracker(id); }} onArrange={() => { setDrawerOpen(false); setArranging(true); }} />
       <button id="arrangeBtn" className={arranging ? "on" : ""} aria-pressed={arranging} aria-label={arranging ? "Done arranging" : "Arrange the room"} title="Arrange the room"
         onClick={() => setArranging(a => !a)}><ArrangeIcon /></button>
-      <TimePreview min={min} preview={clock.preview} setPreview={clock.setPreview} />
+      {display.timePreview && <TimePreview min={min} preview={clock.preview} setPreview={clock.setPreview} />}
+      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} hasDeen={hasDeen}
+        onEditDetails={() => { setSettingsOpen(false); setEditing(true); }} onBackup={() => { setSettingsOpen(false); setBackupOpen(true); }} />
       </>}
       <BackupSheet open={backupOpen} onClose={() => setBackupOpen(false)} />
       <div id="toast" className={toast ? "show" : ""} role="status" aria-live="polite">{toast}</div>

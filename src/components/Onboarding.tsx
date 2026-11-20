@@ -190,7 +190,7 @@ function ClockCheck({ place }: { place: Place }) {
 }
 
 /** Today's five times for the place, each with − / + to match a local mosque. Method and Asr come from the country. */
-function PrayerTimesBox({ place, prayer, onChange }: { place: Place; prayer: PrayerSettings; onChange: (s: PrayerSettings) => void }) {
+export function PrayerTimesBox({ place, prayer, onChange, bare }: { place: Place; prayer: PrayerSettings; onChange: (s: PrayerSettings) => void; bare?: boolean }) {
   const times = useMemo(() => prayerTimes(new Date(), place, prayer), [place, prayer]);
   const base = useMemo(() => prayerTimes(new Date(), place, { ...prayer, adjust: {} }), [place, prayer]);
   const nudge = (k: PrayerName, d: number) => {
@@ -200,7 +200,7 @@ function PrayerTimesBox({ place, prayer, onChange }: { place: Place; prayer: Pra
   };
   return (
     <div className="ob-prayer">
-      <h2>Prayer times</h2>
+      {!bare && <h2>Prayer times</h2>}
       <p className="mnote">Today in {place.name}. If your mosque’s times differ, nudge them with − and +.</p>
       <ul className="ob-times">
         {FIVE.map(k => {

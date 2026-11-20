@@ -12,6 +12,7 @@ import { SURAHS, TOTAL_AYAHS } from "@/data/surahs";
 import { LIBRARY, type LibraryTopic } from "@/data/library";
 import { Board, DayNav, Empty, Form, ItemList, MonthGrid, PageHead, Section, Tag, monthStart, prettyDay, streaks, useDay } from "./kit";
 import { useHideStreaks, StreakToggle } from "./privacy";
+import { ReportMistake } from "@/components/Report";
 
 // ================= Salah =================
 const STATUS: { k: PrayerStatus; label: string }[] = [
@@ -137,6 +138,7 @@ export function QuranLeft() {
           <p className="q-ar" lang="ar" dir="rtl">{q[ref[0] - 1][ref[1] - 1][0]}</p>
           <blockquote className="q-en">{q[ref[0] - 1][ref[1] - 1][1]}</blockquote>
           <figcaption>{surahName(ref[0])} · {ref[0]}:{ref[1]}</figcaption>
+          <ReportMistake what={`Quran text or translation, ${surahName(ref[0])} ${ref[0]}:${ref[1]}`} details={`Translation shown: ${q[ref[0] - 1][ref[1] - 1][1]}`} />
         </figure>
         <Section title="My reflection">
           <Form key={mine?.id ?? "new"} fields={[{ key: "text", label: "What does this ayah say to you today?", type: "textarea", rows: 3, required: true }]}
@@ -237,6 +239,7 @@ export function LibraryLeft() {
           {pick && <button className="k-btn ghost" disabled={added === pick.title}
             onClick={async () => { await addItem("deen", "research", { title: pick.title, category: pick.cat, status: RESEARCH[0] }); setAdded(pick.title); }}>{added === pick.title ? "Added ✓" : "Add to my research"}</button>}
         </div>
+        {pick && <ReportMistake what={`Library topic (${pick.cat})`} details={`Topic shown: ${pick.title}`} />}
       </div>
     </>
   );

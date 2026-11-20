@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { NextTask } from "@/lib/due";
+import { isStill } from "@/lib/display";
 
 /**
  * The room cat. An orange tabby that wanders the open floor, sits now and then to tell you your next task,
@@ -115,7 +116,7 @@ export function Cat({ stage, hidden, night, next, onOpen }: Props) {
   const arrive = useRef<Mode>("sit");
   /** Walk to a point, then sit (or sleep). With reduced motion the cat just appears there. */
   const walkTo = useCallback((to: Pt, then: Mode) => {
-    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const still = isStill();
     const d = still ? 0 : dist(at.current, to);
     setDir(to[0] >= at.current[0] ? 1 : -1); setDur(d / SPEED); setSay(false);
     at.current = to; arrive.current = then; setPos(to); setMode("walk");
@@ -129,7 +130,7 @@ export function Cat({ stage, hidden, night, next, onOpen }: Props) {
     if (mode === "walk") later(() => setMode(arrive.current), dur * 1000 + 30);
     else if (night && mode !== "sleep") walkTo(BED, "sleep");
     else if (!night && mode === "sleep") setMode("sit");
-    else if (mode === "sit" && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    else if (mode === "sit" && !isStill()) {
       if (Math.random() < 0.55) { later(() => setSay(true), 700); later(() => setSay(false), 6200); }
       later(() => walkTo(pick(SPOTS.filter(p => dist(p, at.current) > 30)), "sit"), 7000 + Math.random() * 7000);
     }

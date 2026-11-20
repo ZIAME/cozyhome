@@ -48,4 +48,6 @@ export type Theme = {
   fixed: FixedSpot[];
   /** A frame the owner's name is written on: a <g id="nameplate"> in the art, w×h in its own units. */
   nameplate?: { w: number; h: number; colour: string };
+  /** Who drew the room, for the credits page. */
+  credit: string;
 };

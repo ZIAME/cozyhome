@@ -35,4 +35,7 @@ export const CABIN: Theme = {
     { id: "gift", tracker: "surprise", label: "Gift box" },
   ],
   nameplate: { w: 13, h: 28.5, colour: "#FBF1E1" },
+  // TODO before launch: the cabin started from a stock vector. Confirm its commercial licence and credit it here,
+  // or replace it with the owner's redraw (brief: "Art licence → Redraw").
+  credit: "Room illustration adapted from a licensed stock vector, recoloured and animated for Cozy Home.",
 };

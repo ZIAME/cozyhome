@@ -27,7 +27,7 @@ npm run build      # production build
 
 ## Next stages
 
-- Credits and settings, then a soft launch.
+- Soft launch to 10–20 people, then the Play Store.
 
 ## Project map
 
@@ -46,9 +46,15 @@ npm run build      # production build
 | `src/pages-registry.ts` | Which pages each tracker tab shows |
 | `src/diary/` | The tracker pages: `kit.tsx` (forms, lists, boards, calendars), `deen.tsx`, `mind.tsx`, `work.tsx`, `life.tsx` |
 | `src/lib/items.ts` | Reading and writing tracker records |
-| `public/quran/en.json`, `src/data/surahs.ts` | Quran text and surah index, built by `node scripts/build-quran.mjs` from `quran-json` (CC BY 4.0: Uthmani text from quranenc.com, English by Saheeh International) |
+| `public/quran/en.json`, `src/data/surahs.ts` | Quran text and surah index, built by `node scripts/build-quran.mjs` from `quran-json` (CC BY-SA 4.0: Uthmani text from quranenc.com, English by Saheeh International; see `public/quran/LICENSE.md`) |
 | `src/data/library.ts` | Topics for the Deen library (titles only; to be reviewed) |
 | `public/sw.js` | Service worker: works offline once installed |
+
+## Settings, credits and privacy
+
+- **Settings** (Drawer → Settings): name, place and trackers; prayer calculation (method, Asr, short summer nights, ± minutes per prayer, shown when Deen is picked); hide streaks; backup & sync; calm motion, simple view and the time-preview button. Animations pause while the app is in the background.
+- **Credits** and the **privacy policy** are in Settings and at `/credits` and `/privacy` (for store listings). Text in `src/components/Legal.tsx`. The policy shows a "draft" label until `POLICY_REVIEWED` is set to `true` after legal review.
+- **Report a mistake** (Library topics, ayah of the day, Settings) opens an email to `NEXT_PUBLIC_CONTACT_EMAIL`, or copies the report if that isn't set.
 
 ## Backup and sync
 

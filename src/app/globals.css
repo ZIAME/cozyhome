@@ -417,6 +417,12 @@ header{width:100%;display:flex;justify-content:space-between;align-items:flex-st
 }
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* settings: calm motion, simple view, and nothing animates while the app is in the background */
+html.calm *{animation:none!important;transition:none!important}
+html.paused *{animation-play-state:paused!important}
+html.simple #stars,html.simple #clouds,html.simple #snow{display:none}
+html.simple #lightLayer path[filter]{display:none}
+html.simple #lamps{mix-blend-mode:normal!important;opacity:.35!important}
 
 /* ===================== DIARY PAGES (src/diary) ===================== */
 .pin{--ink2:#8A6346;--line:#EBD3B0;--paper2:#FFFBF4;--tint:#F7E4C3;font-size:14px}
@@ -656,3 +662,23 @@ label.ghost-btn{display:inline-block}
 .bk-restore small{font-weight:700;font-size:12px;color:#8A6346}
 .bk-form{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 @media (max-width:520px){.bk-row{flex-direction:column;align-items:stretch}.bk-row>button,.bk-row>label{align-self:flex-start}}
+
+/* settings */
+.sw{flex:none;width:46px;height:28px;border-radius:999px;border:0;background:#E2C59C;position:relative;cursor:pointer;transition:background .2s}
+.sw i{position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#FFF6E8;box-shadow:0 1px 2px rgba(58,35,22,.3);transition:transform .2s}
+.sw.on{background:var(--ember)}.sw.on i{transform:translateX(18px)}
+.sw:focus-visible,.ghost-btn:focus-visible{outline:3px solid #E9A23B;outline-offset:2px}
+.st-name{max-width:180px}
+label.bk-row{cursor:text}
+.legal{display:flex;flex-direction:column;gap:14px;color:var(--cocoa)}
+.legal section{display:flex;flex-direction:column;gap:6px}
+.legal h3{font-family:var(--font-fredoka),var(--font-nunito),sans-serif;font-weight:600;font-size:16px;color:#7A3A18;margin-bottom:4px}
+.legal p,.legal li{font-weight:600;font-size:14px;line-height:1.55;max-width:66ch}
+.legal ul{padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.legal a{color:#B5521C;font-weight:800}
+.legal-draft{display:inline-block;align-self:flex-start;font-weight:800!important;font-size:12.5px!important;color:#8A2E12;background:#F6C9B7;border-radius:999px;padding:4px 12px}
+.legal-meta{font-size:12.5px!important;color:#9A6B45}
+.legal-page{min-height:100vh;background:var(--cream);padding:32px max(16px,env(safe-area-inset-left,0px)) 48px max(16px,env(safe-area-inset-right,0px))}
+.legal-page main{max-width:720px;margin:0 auto;display:block;min-height:0;padding:0;align-items:stretch}
+.legal-page h1{font-family:var(--font-fredoka),var(--font-nunito),sans-serif;font-weight:700;font-size:clamp(30px,5vw,42px);color:#7A3A18;margin:14px 0 18px}
+.legal-back{font-weight:800;font-size:14px;color:#9A5A2E}
