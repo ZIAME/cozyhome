@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { GROUPS, STARTER_SETS, TRACKERS, TRACKER } from "@/room/catalogue";
 import { ROOM_CAP } from "@/room/layout";
 import { COUNTRIES, nearestCity, searchCities } from "@/data/cities";
-import { FIVE, METHODS, defaultsFor, prayerTimes, type MethodId, type Place, type PrayerName, type PrayerSettings } from "@/lib/prayer";
+import { FIVE, defaultsFor, prayerTimes, type Place, type PrayerName, type PrayerSettings } from "@/lib/prayer";
 import { fmtMin, todayStr } from "@/lib/dates";
 import type { Profile } from "@/lib/profile";
 import { TrackerIcon } from "./Arrange";
@@ -29,15 +29,15 @@ export function Onboarding({ initial, onDone, onCancel }: Props) {
   const [picked, setPicked] = useState<string[]>(initial?.picked ?? []);
   const [place, setPlace] = useState<Place | null>(initial?.profile.place ?? null);
   const [prayer, setPrayer] = useState<PrayerSettings>(initial?.profile.prayer ?? { method: "mwl", asr: "shafii", highLat: "middle", adjust: {} });
-  const [touched, setTouched] = useState(editing); // once you change the method yourself, a new place won't reset it
   const card = useRef<HTMLDivElement>(null);
   const hasDeen = picked.includes("deen");
 
   useEffect(() => { card.current?.querySelector<HTMLElement>("input, button.primary")?.focus(); }, [step]);
 
+  // a new place takes the usual method and Asr school for its country; minute nudges start over
   const choosePlace = (p: Place) => {
     setPlace(p);
-    if (!touched) setPrayer(s => ({ ...s, ...defaultsFor(p.country) }));
+    setPrayer(s => ({ ...s, ...defaultsFor(p.country), adjust: {} }));
   };
   const finish = () => {
     if (!place) return;
@@ -68,9 +68,9 @@ export function Onboarding({ initial, onDone, onCancel }: Props) {
         {step === 2 && <section>
           <h1 id="obTitle">Where’s home?</h1>
           <p className="ob-sub">{hasDeen ? "Prayer times and the sky outside your window follow this place." : "The sky outside your window follows this place."} It stays on this device.</p>
-          <PlacePicker place={place} onPick={choosePlace} />
+          <PlacePicker place={place} onPick={choosePlace} onClear={() => setPlace(null)} />
           {place && <ClockCheck place={place} />}
-          {place && hasDeen && <PrayerSettingsBox place={place} prayer={prayer} onChange={s => { setPrayer(s); setTouched(true); }} />}
+          {place && hasDeen && <PrayerTimesBox place={place} prayer={prayer} onChange={setPrayer} />}
         </section>}
 
         <div className="ob-nav">
@@ -121,7 +121,8 @@ function TrackerStep({ picked, setPicked }: { picked: string[]; setPicked: (p: s
   );
 }
 
-function PlacePicker({ place, onPick }: { place: Place | null; onPick: (p: Place) => void }) {
+/** Find your place. Once one is picked, only its card shows; × clears it to pick again. */
+function PlacePicker({ place, onPick, onClear }: { place: Place | null; onPick: (p: Place) => void; onClear: () => void }) {
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState("");
   const [manual, setManual] = useState(false);
@@ -143,9 +144,17 @@ function PlacePicker({ place, onPick }: { place: Place | null; onPick: (p: Place
   };
   const la = parseFloat(lat), ln = parseFloat(lng), coordsOk = Math.abs(la) <= 90 && Math.abs(ln) <= 180 && lat.trim() !== "" && lng.trim() !== "";
 
+  if (place) return (
+    <div className="ob-place">
+      <div className="ob-chosen" role="status">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 2.5a7 7 0 0 0-7 7c0 5.2 7 12 7 12s7-6.8 7-12a7 7 0 0 0-7-7zm0 9.6a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z"/></svg>
+        <b>{placeLabel(place)}</b><small>{place.lat.toFixed(2)}, {place.lng.toFixed(2)}</small>
+        <button className="ob-clear" onClick={() => { setQ(""); setMsg(""); onClear(); }} aria-label={`Choose a different place than ${place.name}`}>×</button>
+      </div>
+    </div>
+  );
   return (
     <div className="ob-place">
-      {place && <div className="ob-chosen" role="status"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 2.5a7 7 0 0 0-7 7c0 5.2 7 12 7 12s7-6.8 7-12a7 7 0 0 0-7-7zm0 9.6a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z"/></svg><b>{placeLabel(place)}</b><small>{place.lat.toFixed(2)}, {place.lng.toFixed(2)}</small></div>}
       <button className="ob-locate" onClick={locate}>Use my location</button>
       <div className="ob-search">
         <input className="ob-input" value={q} placeholder="…or type your city" aria-label="Search for your city" onChange={e => setQ(e.target.value)} />
@@ -180,7 +189,8 @@ function ClockCheck({ place }: { place: Place }) {
   return <p className="ob-warn" role="note">This device’s clock is set to a different time zone from {place.name}. Times are shown on the device’s clock, so they’ll look shifted until the device is there too.</p>;
 }
 
-function PrayerSettingsBox({ place, prayer, onChange }: { place: Place; prayer: PrayerSettings; onChange: (s: PrayerSettings) => void }) {
+/** Today's five times for the place, each with − / + to match a local mosque. Method and Asr come from the country. */
+function PrayerTimesBox({ place, prayer, onChange }: { place: Place; prayer: PrayerSettings; onChange: (s: PrayerSettings) => void }) {
   const times = useMemo(() => prayerTimes(new Date(), place, prayer), [place, prayer]);
   const base = useMemo(() => prayerTimes(new Date(), place, { ...prayer, adjust: {} }), [place, prayer]);
   const nudge = (k: PrayerName, d: number) => {
@@ -188,29 +198,10 @@ function PrayerSettingsBox({ place, prayer, onChange }: { place: Place; prayer: 
     const adjust = { ...prayer.adjust, [k]: v }; if (!v) delete adjust[k];
     onChange({ ...prayer, adjust });
   };
-  const country = place.country ? COUNTRIES[place.country] : null;
-  const d = defaultsFor(place.country);
   return (
     <div className="ob-prayer">
       <h2>Prayer times</h2>
-      <p className="mnote">{country ? `Usual for ${country}: ${METHODS[d.method].name}, ${d.asr === "hanafi" ? "Hanafi" : "Shafi’i"} Asr.` : "Pick the method your mosque uses."} Check today’s times against your local mosque and nudge any of them.</p>
-      <label className="ob-field">Method
-        <select value={prayer.method} onChange={e => onChange({ ...prayer, method: e.target.value as MethodId })}>
-          {(Object.keys(METHODS) as MethodId[]).map(m => <option key={m} value={m}>{METHODS[m].name}</option>)}
-        </select>
-      </label>
-      <div className="ob-field" role="radiogroup" aria-label="Asr">Asr
-        <div className="seg">
-          {(["hanafi", "shafii"] as const).map(a => <button key={a} role="radio" aria-checked={prayer.asr === a} className={prayer.asr === a ? "on" : ""} onClick={() => onChange({ ...prayer, asr: a })}>{a === "hanafi" ? "Hanafi (later)" : "Shafi’i, Maliki, Hanbali"}</button>)}
-        </div>
-      </div>
-      {Math.abs(place.lat) > 48 && (
-        <label className="ob-field">Short summer nights
-          <select value={prayer.highLat} onChange={e => onChange({ ...prayer, highLat: e.target.value as PrayerSettings["highLat"] })}>
-            <option value="middle">Middle of the night</option><option value="seventh">One seventh of the night</option><option value="angle">Angle-based</option>
-          </select>
-        </label>
-      )}
+      <p className="mnote">Today in {place.name}. If your mosque’s times differ, nudge them with − and +.</p>
       <ul className="ob-times">
         {FIVE.map(k => {
           const a = prayer.adjust[k] ?? 0;
