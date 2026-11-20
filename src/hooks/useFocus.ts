@@ -27,7 +27,7 @@ function chime() {
 export type FocusView = ReturnType<typeof useFocus>;
 
 /** The wall-clock focus timer. Survives a page refresh. */
-export function useFocus(onDone?: (task: string) => void) {
+export function useFocus(onDone?: (task: string, seconds: number) => void) {
   const [s, setS] = useState<FocusState>({ dur: 1500, endAt: null, left: null, task: "" });
   const [, force] = useState(0);
   const [justFinished, setJustFinished] = useState(0);
@@ -41,7 +41,7 @@ export function useFocus(onDone?: (task: string) => void) {
     const id = setInterval(() => {
       if (Date.now() >= s.endAt!) {
         save({ ...s, endAt: null, left: null });
-        chime(); setJustFinished(n => n + 1); doneRef.current?.(s.task);
+        chime(); setJustFinished(n => n + 1); doneRef.current?.(s.task, s.dur);
       } else force(n => n + 1);
     }, 1000);
     return () => clearInterval(id);

@@ -22,13 +22,12 @@ npm run build      # production build
 - **Pills.** The current prayer, with a checkbox while its time is running, plus prayers prayed today and a focus timer pill.
 - **Focus timer.** The wall clock shows a countdown wedge and rings when a session is done.
 - **Spots, trackers and the drawer.** The room has fixed spots (three desk screens, the left wall, two frames, the wall shelf, the coffee table, the floor, the cube shelf). Any tracker from the catalogue can sit on any spot, up to 8 trackers in the room; the rest wait in the drawer. Tap the sofa button (bottom left) to arrange the room. The clock (focus) and the gift box (surprise) are always there.
+- **Every tracker works.** Deen (Salah with heatmap and streaks, ayah of the day, all 114 surahs, reflections, the library and your research board), Journal, Mood, Gratitude, Work board, Design Studio, Content Studio, Code corner, Writer's nook, Study desk, Planner, Habits, Reading list, Fitness & water, Hobbies and Today. Data stays on the device (IndexedDB, `items` table). Streaks can be hidden.
 - **The diary shell.** A cover that swings open, tabs down the side, and pages that flip. The tab pages show their planned blocks until each room is built.
 
 ## Next stages
 
-2. Deen pages: Salah tracker and heatmap, Quran, reflections, library.
-3. Journal, Hobbies, Design Studio, LinkedIn Studio, Planner.
-4. Supabase login and sync across devices.
+- In-app cat, then sync and backup (Supabase), then credits and settings.
 
 ## Project map
 
@@ -44,7 +43,11 @@ npm run build      # production build
 | `src/data/cities.ts` | The bundled city list for onboarding (offline, nothing is sent anywhere) |
 | `src/components/` | Home, Room, Sky, Pills, Diary, focus timer sheet, arrange and drawer sheets |
 | `src/data/sections.ts` | Diary sections, built from the catalogue |
-| `src/pages-registry.ts` | Where real diary pages plug in, by section and tab |
+| `src/pages-registry.ts` | Which pages each tracker tab shows |
+| `src/diary/` | The tracker pages: `kit.tsx` (forms, lists, boards, calendars), `deen.tsx`, `mind.tsx`, `work.tsx`, `life.tsx` |
+| `src/lib/items.ts` | Reading and writing tracker records |
+| `public/quran/en.json`, `src/data/surahs.ts` | Quran text and surah index, built by `node scripts/build-quran.mjs` from `quran-json` (CC BY 4.0: Uthmani text from quranenc.com, English by Saheeh International) |
+| `src/data/library.ts` | Topics for the Deen library (titles only; to be reviewed) |
 | `public/sw.js` | Service worker: works offline once installed |
 
 ## Deploy

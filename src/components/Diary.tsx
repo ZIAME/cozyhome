@@ -110,7 +110,7 @@ export function Diary({ target, onClosed }: { target: Target; onClosed: () => vo
       <button className="d-home" onClick={close}><HomeIcon />Home</button>
       <div className="d-title">{S.title}<small>{S.sub}</small></div>
       <div className="book"
-        onTouchStart={e => { x0.current = e.touches[0].clientX; }}
+        onTouchStart={e => { x0.current = (e.target as Element).closest(".k-board, input, textarea, select, .i-board") ? null : e.touches[0].clientX; }}
         onTouchEnd={e => { if (x0.current == null) return; const dx = e.changedTouches[0].clientX - x0.current; x0.current = null; if (Math.abs(dx) > 60) goto(dx < 0 ? Math.min(n - 1, idx + 1) : Math.max(0, idx - 1)); }}>
         <div className="board" />
         <div className="page left"><div className="pin" id="pL">{left}</div></div>

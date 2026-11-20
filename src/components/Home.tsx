@@ -5,7 +5,8 @@ import { useClock } from "@/hooks/useClock";
 import { useFocus, mmss } from "@/hooks/useFocus";
 import { skyAt } from "@/lib/sky";
 import { currentPrayer, nextPrayer, FIVE } from "@/lib/prayer";
-import { addDays, fmtMin } from "@/lib/dates";
+import { addDays, fmtMin, todayStr } from "@/lib/dates";
+import { addItem } from "@/lib/items";
 import { db } from "@/lib/db";
 import { demoDay, isPrayed, togglePrayed } from "@/lib/salah";
 import { SURPRISES, TRACKER } from "@/room/catalogue";
@@ -28,7 +29,10 @@ export function Home() {
   const clock = useClock(where.place, where.prayer);
   const { P, min, today } = clock;
   const [toast, setToast] = useState("");
-  const focus = useFocus(task => showToast(`Focus done${task ? ": " + task : ""}. Take a little break ☕`));
+  const focus = useFocus((task, seconds) => {
+    showToast(`Focus done${task ? ": " + task : ""}. Take a little break ☕`);
+    addItem("focus", "session", { minutes: Math.round(seconds / 60), task }, { date: todayStr() });
+  });
   const sky = useMemo(() => skyAt(P, min), [P, min]);
   const cur = currentPrayer(P, min);
   const curDate = cur ? addDays(today, cur.dayOffset) : today;
@@ -78,6 +82,16 @@ export function Home() {
     if (spot) setZoom({ spot, fade: false });
     setDiaryTarget({ sec: tracker, tab });
   }, [layout]);
+
+  // ?open=tracker/tab opens a diary page directly (app shortcuts, links)
+  useEffect(() => {
+    if (!ready) return;
+    const o = new URLSearchParams(location.search).get("open");
+    if (!o) return;
+    const [t, tab] = o.split("/");
+    if (TRACKER[t]?.tabs.length) setDiaryTarget({ sec: t, tab });
+    history.replaceState(null, "", location.pathname);
+  }, [ready]);
 
   const enter = useCallback((spot: string) => {
     if (arranging) { if (theme.spots.some(s => s.id === spot)) setSpotSheet(spot); return; }
