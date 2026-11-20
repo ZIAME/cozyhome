@@ -9,7 +9,7 @@ Built with Next.js (App Router) and TypeScript. It installs as a PWA and keeps a
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm test           # prayer-time tests
+npm test           # prayer-time and room-layout tests
 npm run build      # production build
 ```
 
@@ -20,6 +20,7 @@ npm run build      # production build
 - **Prayer times.** Calculated on the device for Lucknow, using the Karachi method with Hanafi Asr (`src/lib/config.ts`). They're checked against published timetables in `src/lib/prayer.test.ts`.
 - **Pills.** The current prayer, with a checkbox while its time is running, plus prayers prayed today and a focus timer pill.
 - **Focus timer.** The wall clock shows a countdown wedge and rings when a session is done.
+- **Spots, trackers and the drawer.** The room has fixed spots (three desk screens, the left wall, two frames, the wall shelf, the coffee table, the floor, the cube shelf). Any tracker from the catalogue can sit on any spot, up to 8 trackers in the room; the rest wait in the drawer. Tap the sofa button (bottom left) to arrange the room. The clock (focus) and the gift box (surprise) are always there.
 - **The diary shell.** A cover that swings open, tabs down the side, and pages that flip. The tab pages show their planned blocks until each room is built.
 
 ## Next stages
@@ -33,10 +34,14 @@ npm run build      # production build
 | Path | What it is |
 | --- | --- |
 | `art/home.svg`, `art/clock.svg` | The original room and clock illustrations |
-| `scripts/build-cabin.py` | Recolours the room and builds the interactive SVG (`src/data/cabinSvg.ts`). Re-run after editing the art: `python3 scripts/build-cabin.py` |
+| `scripts/build-cabin.py` | Recolours the room, marks its spots and builds the room art (`src/room/themes/cabin.art.ts`). Re-run after editing the art: `python3 scripts/build-cabin.py` |
+| `src/room/catalogue.ts` | Every tracker: title, group, icon, colours and diary tabs |
+| `src/room/theme.ts`, `src/room/themes/` | Themes: art plus spot positions. A new theme keeps the same spot ids |
+| `src/room/layout.ts` | Which tracker sits on which spot, the 8-tracker cap and the drawer (tested in `layout.test.ts`) |
+| `src/room/props.ts` | Draws a tracker's object on a spot the art didn't draw it for (screens, wall cards, boxes, rugs, tints) |
 | `src/lib/` | Prayer times, sky and lighting, dates, the on-device database |
-| `src/components/` | Home, Room, Sky, Pills, Diary, focus timer sheet |
-| `src/data/sections.ts` | Diary sections and tabs, and which object opens which |
+| `src/components/` | Home, Room, Sky, Pills, Diary, focus timer sheet, arrange and drawer sheets |
+| `src/data/sections.ts` | Diary sections, built from the catalogue |
 | `src/pages-registry.ts` | Where real diary pages plug in, by section and tab |
 | `public/sw.js` | Service worker: works offline once installed |
 

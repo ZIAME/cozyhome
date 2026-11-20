@@ -13,7 +13,7 @@ export function prayerNowText(P: DayTimes, min: number) {
   return `Next: ${n.name} at ${fmtMin(n.at)}`;
 }
 
-export function Header({ P, min, sky }: { P: DayTimes; min: number; sky: SkyState }) {
+export function Header({ P, min, sky, showPrayer = true }: { P: DayTimes; min: number; sky: SkyState; showPrayer?: boolean }) {
   const [dates, setDates] = useState({ g: "", h: "" });
   useEffect(() => {
     const d = new Date();
@@ -29,7 +29,7 @@ export function Header({ P, min, sky }: { P: DayTimes; min: number; sky: SkyStat
         <h1 className="greet">{g}, {OWNER_NAME}</h1>
         <div className="dates"><span>{dates.g}</span>{dates.h && <><span className="dot-sep" /><span>{dates.h}</span></>}</div>
       </div>
-      <div className="phase">{night ? <MoonIcon /> : <SunIcon />}<span>{PHASE_NAME[sky.key]} · {prayerNowText(P, min)}</span></div>
+      <div className="phase">{night ? <MoonIcon /> : <SunIcon />}<span>{PHASE_NAME[sky.key]}{showPrayer && <> · {prayerNowText(P, min)}</>}</span></div>
     </header>
   );
 }

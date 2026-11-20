@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Turns art/home.svg into the interactive room: warm recolour, clickable object groups,
+"""Turns art/home.svg into the cabin theme's room art: warm recolour, spots (where tracker objects sit),
 monitor screens, window sky, lamp glow and the wall clock. Run: python3 scripts/build-cabin.py"""
 import re, colorsys
 
@@ -60,65 +60,55 @@ parts[pos[76]] = ''
 parts[pos[77]] = '<path d="M153.5 139.27L222.397 99.5V101.6L153.5 141.37Z" fill="#8A3E28" opacity=".55"/>'
 post.setdefault(pos[77], []).append('<g id="winSky" clip-path="url(#winClip)" pointer-events="none"></g>')
 
-HOT = [
-    # room-id, label, sub, ranges
-    ('deen-salah',   'Salah tracker',   'Deen',              [(718, 723)]),
-    ('deen-quran',   'Quran',           'Deen',              [(742, 751)]),
-    ('deen-library', 'Islamic library', 'Deen',              [(79, 84), (94, 155)]),
-    ('journal',      'Journal',         'Write a little',    [(177, 216)]),
-    ('hobbies',      'Hobbies & creative', 'Your idea boxes', [(522, 548), (566, 568), (578, 637)]),
-    ('planner',      'Planner',         'Today & this week', [(752, 778)]),
-    ('surprise',     'Surprise me',     'Open the gift',     [(779, 786)]),
+# ---------- 3. spots ----------
+# Each spot is a place in the room where a tracker's object can sit (see src/room/themes/cabin.ts).
+#   hot:    the path ranges you can hover and click (furniture included)
+#   native: the object the art draws there; hidden when another tracker takes the spot
+# An empty <g class="alt"> is left after the native art. The app draws other trackers' objects into it.
+SPOTS = [
+    # spot id       hot ranges                     native ranges
+    ('wall-left',  [(752, 778)],                  [(752, 778)]),                              # planner calendar
+    ('wall-shelf', [(79, 84), (94, 155)],         [(95, 155)]),                               # books on the floating shelf
+    ('frame-a',    [(20, 26)],                    [(24, 26)]),                                # yellow print (decor when empty)
+    ('frame-b',    [(85, 92)],                    [(89, 91)]),                                # pink print (decor when empty)
+    ('table',      [(177, 216)],                  [(190, 216)]),                              # notebook on the coffee table
+    ('rug',        [(718, 723)],                  [(718, 723)]),                              # prayer mat
+    ('rug-book',   [(742, 751)],                  [(742, 751)]),                              # open Quran
+    ('cube-shelf', [(522, 548), (580, 637)],      [(522, 548), (586, 597), (615, 620), (624, 629)]),  # storage boxes
 ]
-for rid, label, sub, ranges in HOT:
-    for a, b in ranges:
-        wrap(a, b, f'<g class="hot" data-room="{rid}">')
+FIXED = [('gift', [(779, 786)])]                                                              # always-on: Surprise me
+
+close_inner = {}; close_outer = {}; alt_at = {}
+def open_at(i, tag): pre.setdefault(pos[i], []).append(tag)
+for sid, hot, native in SPOTS:
+    for a, b in hot:
+        open_at(a, f'<g class="spot" data-spot="{sid}">')
+        close_outer.setdefault(pos[b], []).append('</g>')
+    for a, b in native:
+        open_at(a, f'<g class="native" data-spot="{sid}">')
+        close_inner.setdefault(pos[b], []).append('</g>')
+    alt_at[pos[hot[-1][1]]] = f'<g class="alt" data-spot="{sid}"></g>'
+for sid, hot in FIXED:
+    for a, b in hot:
+        open_at(a, f'<g class="spot fixed" data-spot="{sid}">')
+        close_outer.setdefault(pos[b], []).append('</g>')
 wrap(638, 678, '<g class="sway">')
 
-# ---------- 3. screens ----------
-def screen(rid, tl, w, h, inner):
+# ---------- 4. screens ----------
+# The three desk monitors are spots too. Their picture is drawn by the app (src/room/props.ts) in a 100x60 box.
+def screen(sid, tl, w, h):
     a, b = w[0] / 100, w[1] / 100
     c, d = h[0] / 60, h[1] / 60
     m = f'matrix({a:.5f} {b:.5f} {c:.5f} {d:.5f} {tl[0]} {tl[1]})'
-    return (f'<g class="hot screen" data-room="{rid}"><g transform="{m}">'
+    return (f'<g class="spot screen" data-spot="{sid}"><g transform="{m}">'
             f'<rect class="scr-bg" width="100" height="60" fill="#2A1C14"/>'
-            f'<g class="scr-ui">{inner}</g>'
+            f'<g class="scr-ui alt" data-spot="{sid}"></g>'
             f'<rect class="scr-glare" width="100" height="60" fill="url(#glare)"/></g></g>')
 
-design_ui = '''
-<rect width="100" height="60" fill="#F6E7CF"/>
-<rect width="100" height="8" fill="#E9CFA9"/>
-<circle cx="5" cy="4" r="1.6" fill="#D2692A"/><circle cx="10" cy="4" r="1.6" fill="#E9A23B"/><circle cx="15" cy="4" r="1.6" fill="#B9A06A"/>
-<rect x="0" y="8" width="13" height="52" fill="#EEDABC"/>
-<rect x="3" y="13" width="7" height="5" rx="1" fill="#D2692A"/><rect x="3" y="21" width="7" height="5" rx="1" fill="#C9A37B"/><rect x="3" y="29" width="7" height="5" rx="1" fill="#C9A37B"/>
-<rect x="20" y="13" width="58" height="40" rx="2" fill="#FFF9EE" stroke="#E2C59C"/>
-<path d="M27 45 C 38 18, 55 52, 71 22" stroke="#D2692A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-<circle cx="27" cy="45" r="2" fill="#fff" stroke="#3A2316"/><circle cx="71" cy="22" r="2" fill="#fff" stroke="#3A2316"/>
-<line x1="38" y1="18" x2="27" y2="45" stroke="#3A2316" stroke-width=".6" stroke-dasharray="1.5 1"/>
-<circle cx="38" cy="18" r="1.4" fill="#3A2316"/>
-<rect x="83" y="13" width="14" height="5" rx="1" fill="#E9A23B"/><rect x="83" y="21" width="14" height="5" rx="1" fill="#D2692A"/><rect x="83" y="29" width="14" height="5" rx="1" fill="#F2D27A"/><rect x="83" y="37" width="14" height="5" rx="1" fill="#5C3A22"/>
-'''
-linkedin_ui = '''
-<rect width="100" height="60" fill="#F3E3C3"/>
-<rect width="100" height="9" fill="#5C3A22"/>
-<rect x="4" y="2.6" width="20" height="3.8" rx="1.9" fill="#E9A23B"/>
-<rect x="10" y="13" width="80" height="44" rx="3" fill="#FFF9EE"/>
-<circle cx="19" cy="22" r="5" fill="#D2692A"/>
-<rect x="27" y="18.5" width="28" height="3" rx="1.5" fill="#3A2316"/><rect x="27" y="23.5" width="18" height="2.4" rx="1.2" fill="#C9A37B"/>
-<rect x="15" y="31" width="68" height="2.6" rx="1.3" fill="#8A6A52"/><rect x="15" y="36" width="60" height="2.6" rx="1.3" fill="#8A6A52"/><rect x="15" y="41" width="40" height="2.6" rx="1.3" fill="#8A6A52"/>
-<path d="M19 51.5 c-1.6-1.8 -4 -.4 -3 1.4 l3 2.6 3-2.6 c1-1.8 -1.4-3.2 -3-1.4z" fill="#D2692A"/>
-<rect x="27" y="50" width="10" height="4" rx="2" fill="#E9CFA9"/><rect x="40" y="50" width="10" height="4" rx="2" fill="#E9CFA9"/>
-'''
-status_ui = '''
-<rect width="100" height="60" fill="#3A2316"/>
-<path d="M60 12 a12 12 0 1 0 10 19 a9.5 9.5 0 1 1 -10 -19z" fill="#F2D27A"/>
-<g id="scrDots"></g>
-<rect x="16" y="46" width="68" height="4" rx="2" fill="#5C3A22"/><rect id="scrBar" x="16" y="46" width="40" height="4" rx="2" fill="#E9A23B"/>
-'''
 # right (249) drawn first, then middle (254), then left (257)
-post.setdefault(pos[249], []).append(screen('today', (341.062, 194.395), (20.921, 24.228), (0, 21.534), status_ui))
-post.setdefault(pos[254], []).append(screen('linkedin', (305.178, 174.051), (33.155, 19.14), (0, 21.534), linkedin_ui))
-post.setdefault(pos[257], []).append(screen('design', (256.955, 165.094), (45.287, 7.004), (0, 21.534), design_ui))
+post.setdefault(pos[249], []).append(screen('screen-right', (341.062, 194.395), (20.921, 24.228), (0, 21.534)))
+post.setdefault(pos[254], []).append(screen('screen-mid', (305.178, 174.051), (33.155, 19.14), (0, 21.534)))
+post.setdefault(pos[257], []).append(screen('screen-left', (256.955, 165.094), (45.287, 7.004), (0, 21.534)))
 
 
 # ---------- clock (focus timer) on the right wall ----------
@@ -129,7 +119,7 @@ ckp = [re.sub(r'#[0-9A-Fa-f]{6}\b', lambda m: CMAP.get(m.group(0).upper(), m.gro
 body, bellR, bellL, face, dot, h1, h2, rim, tail, shade = ckp
 FACE_T = 'rotate(10.4915 13.4478 16.1028) translate(13.4478 16.1028) scale(1 1.2854)'
 clock_svg = (
-  '<g class="hot clock" data-room="focus"><g transform="translate(413.5 134) matrix(1.12 .6467 0 1.12 0 0)">'
+  '<g class="spot fixed clock" data-spot="clock"><g transform="translate(413.5 134) matrix(1.12 .6467 0 1.12 0 0)">'
   + body + bellR + bellL + face +
   f'<g transform="{FACE_T}"><path id="ckWedge" d="" fill="#E07A35" opacity=".85"/></g>'
   + rim + tail + shade +
@@ -142,10 +132,12 @@ clock_svg = (
   '</g></g>')
 post.setdefault(pos[92], []).append(clock_svg)
 
-# ---------- 4. assemble ----------
+# ---------- 5. assemble ----------
 out = []
 for j, p in enumerate(parts):
-    out.extend(pre.get(j, [])); out.append(p); out.extend(post.get(j, []))
+    out.extend(pre.get(j, [])); out.append(p)
+    out.extend(close_inner.get(j, [])); out.append(alt_at.get(j, '')); out.extend(close_outer.get(j, []))
+    out.extend(post.get(j, []))
 svg = ''.join(out)
 
 ROOM = 'M26.65 153.7L250.15 24.66L473.65 153.7V336.6L250.15 465.65L26.65 336.6Z'
@@ -180,8 +172,8 @@ overlays = f'''
 svg = svg.replace('<defs>', '<defs>' + extra_defs, 1)
 svg = svg.replace('</svg>', overlays + '</svg>')
 svg = svg.replace('<svg width="500" height="500" viewBox="0 0 500 500"',
-                  '<svg id="room" viewBox="22 20 456 450" role="img" aria-label="Afra\'s cozy room"')
+                  '<svg id="room" viewBox="22 20 456 450" role="img" aria-label="Your cozy room"')
 
-out=os.path.join(ROOT,'src','data','cabinSvg.ts')
-open(out,'w').write('// Generated by scripts/build-cabin.py from art/home.svg. Do not edit by hand.\nexport const CABIN_SVG = '+json.dumps(svg,ensure_ascii=False)+';\n')
+out=os.path.join(ROOT,'src','room','themes','cabin.art.ts')
+open(out,'w').write('// Generated by scripts/build-cabin.py from art/home.svg. Do not edit by hand.\nexport const CABIN_ART = '+json.dumps(svg,ensure_ascii=False)+';\n')
 print('wrote', out, len(svg))
