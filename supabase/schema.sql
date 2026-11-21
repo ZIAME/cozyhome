@@ -54,6 +54,12 @@ create trigger keep_newer before insert or update on public.salah_days for each 
 drop trigger if exists keep_newer on public.settings;
 create trigger keep_newer before insert or update on public.settings for each row execute function public.cozy_keep_newer();
 
+-- Signed-in people may use the tables at all (newer Supabase projects don't grant this automatically).
+-- Row-level security below still limits each person to their own rows.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.items, public.salah_days, public.settings to authenticated;
+revoke all on public.items, public.salah_days, public.settings from anon;
+
 -- Row-level security: your rows only.
 alter table public.items enable row level security;
 alter table public.salah_days enable row level security;
