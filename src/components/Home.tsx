@@ -24,7 +24,7 @@ import { TimePreview } from "./TimePreview";
 import { ArrangeBar, ArrangeIcon, DrawerSheet, SpotSheet } from "./Arrange";
 import { Onboarding, type OnboardResult } from "./Onboarding";
 import { BackupSheet } from "./Backup";
-import { useAutoSync } from "@/lib/sync";
+import { clearNotice, useAutoSync, useSyncStatus } from "@/lib/sync";
 import { askPersistence } from "@/lib/backup";
 import { useApplyDisplay, useDisplay } from "@/lib/display";
 import { SettingsSheet } from "./Settings";
@@ -64,6 +64,8 @@ export function Home() {
   const [display] = useDisplay();
   useApplyDisplay(display);
   useAutoSync();
+  const syncStatus = useSyncStatus();
+  useEffect(() => { if (syncStatus.notice) { showToast(syncStatus.notice); clearNotice(); } }, [syncStatus.notice]);
   const [reveal, setReveal] = useState(false);
   const onboarding = profileLoaded && (!profile || editing);
   const ready = profileLoaded && loaded && !!profile;
@@ -78,7 +80,7 @@ export function Home() {
   }, [profile, saveProfile, save, layout, theme]);
 
   function showToast(msg: string) { setToast(msg); }
-  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(""), 4200); return () => clearTimeout(t); }, [toast]);
+  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(""), Math.max(4200, toast.length * 70)); return () => clearTimeout(t); }, [toast]);
   useEffect(() => { document.body.classList.toggle("dark", sky.d > 0.5); }, [sky.d]);
   useEffect(() => {
     if (!arranging) return;

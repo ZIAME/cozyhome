@@ -7,6 +7,8 @@ import { FIVE, defaultsFor, prayerTimes, type Place, type PrayerName, type Praye
 import { fmtMin, todayStr } from "@/lib/dates";
 import type { Profile } from "@/lib/profile";
 import { TrackerIcon } from "./Arrange";
+import { SignInForm } from "./Backup";
+import { syncConfigured, useSyncStatus } from "@/lib/sync";
 
 export type OnboardResult = { profile: Profile; picked: string[] };
 type Props = {
@@ -49,7 +51,7 @@ export function Onboarding({ initial, onDone, onCancel }: Props) {
 
   return (
     <div id="onboard" role="dialog" aria-modal="true" aria-labelledby="obTitle">
-      <div className={"ob-card" + (step === 1 ? " wide" : "")} ref={card} onKeyDown={e => { if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT" && step === 0) next(); }}>
+      <div className={"ob-card" + (step === 1 ? " wide" : "")} ref={card} onKeyDown={e => { if (e.key === "Enter" && (e.target as HTMLElement).getAttribute("aria-label") === "Your name" && step === 0) next(); }}>
         <div className="ob-top">
           <ol className="ob-steps" aria-label="Steps">
             {steps.map((s, i) => <li key={s} className={i === step ? "on" : i < step ? "done" : ""} aria-current={i === step ? "step" : undefined}>{s}</li>)}
@@ -61,6 +63,7 @@ export function Onboarding({ initial, onDone, onCancel }: Props) {
           <h1 id="obTitle">{editing ? "Your details" : "Welcome home"}</h1>
           <p className="ob-sub">What should we call you? It goes on your wall and in your greeting.</p>
           <input className="ob-input" value={name} maxLength={40} autoComplete="given-name" placeholder="Your name" aria-label="Your name" onChange={e => setName(e.target.value)} />
+          {!editing && syncConfigured && <HaveARoom />}
         </section>}
 
         {step === 1 && <TrackerStep picked={picked} setPicked={setPicked} />}
@@ -78,6 +81,25 @@ export function Onboarding({ initial, onDone, onCancel }: Props) {
           <button className="primary" disabled={!canNext} onClick={next}>{step < 2 ? "Next" : editing ? "Save" : "Build my room"}</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * For a second device: sign in instead of starting over. Once the first sync brings the profile down,
+ * onboarding closes by itself and the room appears.
+ */
+function HaveARoom() {
+  const [open, setOpen] = useState(false);
+  const s = useSyncStatus();
+  const noRoom = !!s.email && !s.busy && s.last !== null;
+  return (
+    <div className="ob-have">
+      {!open && !s.email ? <button className="ob-link" onClick={() => setOpen(true)}>Already have a room on another device? Sign in</button> : <>
+        <p className="mnote"><b>Bring your room here.</b> Sign in with the email you use for sync on your other device.</p>
+        <SignInForm />
+        {noRoom && <p className="mnote">No room is saved for this account yet. Set one up here and it will sync.</p>}
+      </>}
     </div>
   );
 }

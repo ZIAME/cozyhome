@@ -232,6 +232,7 @@ header{width:100%;display:flex;justify-content:space-between;align-items:flex-st
 .ob-results small{font-weight:700;color:#9A6B45}
 .ob-link{align-self:flex-start;font-size:13px}
 .ob-coords{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center}
+.ob-have{margin-top:16px;padding-top:12px;border-top:1.5px dashed #EBD3B0;display:flex;flex-direction:column;gap:8px}
 .ob-warn{font-weight:700;font-size:13px;line-height:1.4;color:#8A3E16;background:#FBE0CF;border-radius:14px;padding:10px 12px}
 .ob-prayer{margin-top:18px;padding-top:14px;border-top:1.5px dashed #EBD3B0}
 .ob-field{display:flex;flex-direction:column;gap:6px;margin-top:12px;font-family:var(--font-fredoka),var(--font-nunito),sans-serif;font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#9A6B45}

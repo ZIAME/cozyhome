@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { askPersistence, backupFile, isPersisted, lastBackup, parseBackup, restoreBackup, type Backup, type BackupSummary } from "@/lib/backup";
-import { deleteCloudAccount, sendSignIn, signOut, syncNow, useSyncStatus, verifyCode } from "@/lib/sync";
+import { deleteCloudAccount, resetSentTo, sendSignIn, signOut, syncNow, useSyncStatus, verifyCode } from "@/lib/sync";
 import { Modal } from "./Arrange";
 
 const ago = (t: number | string | null) => {
@@ -99,9 +99,8 @@ function DeviceSection() {
 
 function SyncSection() {
   const s = useSyncStatus();
-  const [email, setEmail] = useState(""), [code, setCode] = useState("");
-  const [msg, setMsg] = useState(""), [wait, setWait] = useState(false);
-  const run = async (fn: () => Promise<unknown>, ok?: string) => { setWait(true); setMsg(""); try { await fn(); if (ok) setMsg(ok); } catch (e) { setMsg(friendly(e)); } finally { setWait(false); } };
+  const [msg, setMsg] = useState("");
+  const run = async (fn: () => Promise<unknown>, ok?: string) => { setMsg(""); try { await fn(); if (ok) setMsg(ok); } catch (e) { setMsg(friendly(e)); } };
 
   if (!s.configured) return (
     <section className="bk-sec"><h3>Sync between devices</h3>
@@ -110,20 +109,7 @@ function SyncSection() {
   if (!s.email) return (
     <section className="bk-sec"><h3>Sync between devices</h3>
       <p className="mnote">Sign in with your email to keep your phone and laptop in step. Your diary stays private: only you can read it.</p>
-      {!s.sentTo ? (
-        <form className="bk-form" onSubmit={e => { e.preventDefault(); run(() => sendSignIn(email.trim())); }}>
-          <input className="ob-input" type="email" required autoComplete="email" placeholder="you@example.com" aria-label="Email" value={email} onChange={e => setEmail(e.target.value)} />
-          <button className="mbtn" disabled={wait || !email.includes("@")}>Email me a sign-in link</button>
-        </form>
-      ) : (
-        <form className="bk-form" onSubmit={e => { e.preventDefault(); run(() => verifyCode(s.sentTo!, code)); }}>
-          <p className="mnote">We sent a link to <b>{s.sentTo}</b>. Open it on this device, or type the 6-digit code from the email:</p>
-          <input className="ob-input" inputMode="numeric" autoComplete="one-time-code" maxLength={10} placeholder="123456" aria-label="Sign-in code" value={code} onChange={e => setCode(e.target.value)} />
-          <button className="mbtn" disabled={wait || code.trim().length < 6}>Sign in</button>
-          <button type="button" className="ob-link" onClick={() => run(() => sendSignIn(s.sentTo!), "Sent again.")}>Send again</button>
-        </form>
-      )}
-      {msg && <p className="mnote" role="status">{msg}</p>}
+      <SignInForm />
     </section>
   );
   return (
@@ -139,5 +125,40 @@ function SyncSection() {
       <p className="mnote">Signing out keeps everything on this device. Deleting removes your account and everything stored in the cloud, photos included.</p>
       {msg && <p className="mnote" role="status">{msg}</p>}
     </section>
+  );
+}
+
+/** Email sign-in: ask for a link, then open it (or type a code, when the email has one). */
+export function SignInForm() {
+  const s = useSyncStatus();
+  const [email, setEmail] = useState(""), [code, setCode] = useState("");
+  const [showCode, setShowCode] = useState(false);
+  const [msg, setMsg] = useState(""), [wait, setWait] = useState(false);
+  const run = async (fn: () => Promise<unknown>, ok?: string) => { setWait(true); setMsg(""); try { await fn(); if (ok) setMsg(ok); } catch (e) { setMsg(friendly(e)); } finally { setWait(false); } };
+  if (s.email) return <p className="mnote" role="status">Signed in as <b>{s.email}</b>. {s.busy ? "Bringing your room over…" : ""}</p>;
+  return (
+    <>
+      {!s.sentTo ? (
+        <form className="bk-form" onSubmit={e => { e.preventDefault(); run(() => sendSignIn(email.trim())); }}>
+          <input className="ob-input" type="email" required autoComplete="email" placeholder="you@example.com" aria-label="Email" value={email} onChange={e => setEmail(e.target.value)} />
+          <button className="mbtn" disabled={wait || !email.includes("@")}>Email me a sign-in link</button>
+        </form>
+      ) : (
+        <div className="bk-form">
+          <p className="mnote">We sent a link to <b>{s.sentTo}</b>. Open the email on this device and tap the link: you’ll come back here signed in. It can take a minute; check spam too.</p>
+          {!showCode ? <button type="button" className="ob-link" onClick={() => setShowCode(true)}>My email has a 6-digit code instead</button> : (
+            <form className="bk-form" onSubmit={e => { e.preventDefault(); run(() => verifyCode(s.sentTo!, code)); }}>
+              <input className="ob-input" inputMode="numeric" autoComplete="one-time-code" maxLength={10} placeholder="123456" aria-label="Sign-in code" value={code} onChange={e => setCode(e.target.value)} />
+              <button className="mbtn" disabled={wait || code.trim().length < 6}>Sign in</button>
+            </form>
+          )}
+          <div className="mrow">
+            <button type="button" className="ob-link" onClick={() => run(() => sendSignIn(s.sentTo!), "Sent again.")}>Send again</button>
+            <button type="button" className="ob-link" onClick={() => run(() => resetSentTo())}>Use a different email</button>
+          </div>
+        </div>
+      )}
+      {msg && <p className="mnote" role="status">{msg}</p>}
+    </>
   );
 }

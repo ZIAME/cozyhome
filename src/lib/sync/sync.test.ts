@@ -72,6 +72,25 @@ describe("sync", () => {
     expect(await db.items.get(it1.id)).toBeUndefined();
   });
 
+  it("a new device adopts the cloud's room instead of replacing it", async () => {
+    const cloud = new MemoryRemote();
+    await db.settings.put({ key: "profile", value: { name: "Afra" } });
+    await db.settings.put({ key: "room", value: { spots: { rug: "deen" } } });
+    await addItem("journal", "entry", { text: "from the laptop" });
+    await syncOnce(cloud, FRESH);
+    await tick();
+
+    await wipe(); // the phone: onboarded quickly before signing in, so its settings are newer
+    await db.settings.put({ key: "profile", value: { name: "A" } });
+    await db.settings.put({ key: "room", value: { spots: {} } });
+    await addItem("habits", "habit", { name: "phone habit" });
+    await syncOnce(cloud, FRESH);
+    expect((await db.settings.get("profile"))?.value).toEqual({ name: "Afra" });
+    expect((await db.settings.get("room"))?.value).toEqual({ spots: { rug: "deen" } });
+    expect(await db.items.count()).toBe(2); // both devices' records are kept
+    expect((cloud.settings.get("profile")?.value as { name: string }).name).toBe("Afra");
+  });
+
   it("stamps local writes but keeps the cloud's stamp on pulled rows", async () => {
     await db.salah.put({ date: "2026-01-01", p: {}, x: {} });
     expect((await db.salah.get("2026-01-01"))?.updated).toBeGreaterThan(0);

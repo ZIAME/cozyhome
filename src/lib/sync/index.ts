@@ -16,10 +16,14 @@ export type SyncStatus = {
   error: string | null;
   /** After asking for a sign-in email. */
   sentTo: string | null;
+  /** A one-off message for the person, e.g. after coming back from a sign-in link. */
+  notice: string | null;
 };
-let st: SyncStatus = { configured: syncConfigured, email: null, busy: false, last: null, error: null, sentTo: null };
+let st: SyncStatus = { configured: syncConfigured, email: null, busy: false, last: null, error: null, sentTo: null, notice: null };
 const subs = new Set<() => void>();
 const set = (p: Partial<SyncStatus>) => { st = { ...st, ...p }; subs.forEach(f => f()); };
+export const clearNotice = () => set({ notice: null });
+export const resetSentTo = async () => set({ sentTo: null });
 export const useSyncStatus = () => useSyncExternalStore(f => { subs.add(f); return () => { subs.delete(f); }; }, () => st, () => st);
 
 let uid: string | null = null;
@@ -54,13 +58,25 @@ export function useAutoSync() {
     if (!syncConfigured || started) return;
     started = true;
     let timer = 0;
+    // Coming back from a sign-in email? (#access_token=… or ?code=… on success, #error=… when the link is bad)
+    const params = new URLSearchParams(location.hash.slice(1) + "&" + location.search.slice(1));
+    const fromLink = params.has("access_token") || params.has("code") || params.has("error");
+    const linkError = params.get("error_code") === "otp_expired"
+      ? "That sign-in link has expired or was already used. Send yourself a new one from Backup & sync."
+      : params.get("error_description")?.replace(/\+/g, " ") ?? null;
+    const tidyUrl = () => { if (fromLink) history.replaceState(null, "", location.pathname); };
     supabase().then(sb => {
       const apply = (u: { id: string; email?: string } | null) => {
         const was = uid; uid = u?.id ?? null;
         set({ email: u?.email ?? null, last: uid ? (JSON.parse(localStorage.getItem(stateKey()) || "{}").last ?? null) : null });
         if (uid && uid !== was) syncNow();
       };
-      sb.auth.getSession().then(({ data }) => apply(data.session?.user ?? null));
+      sb.auth.getSession().then(({ data, error }) => {
+        const u = data.session?.user ?? null;
+        apply(u);
+        if (fromLink) set({ sentTo: null, notice: u ? `Signed in as ${u.email}. Your room is syncing.` : linkError ?? (error ? `Sign-in didn’t work: ${error.message}` : "That sign-in link didn’t work. Send yourself a new one.") });
+        tidyUrl();
+      });
       sb.auth.onAuthStateChange((_e, s) => apply(s?.user ?? null));
     }).catch(() => {});
     const kick = () => { if (document.visibilityState === "visible") syncNow(); };
@@ -71,7 +87,7 @@ export function useAutoSync() {
   }, []);
 }
 
-/** Email a sign-in link (and code). The link brings you back here signed in. */
+/** Email a sign-in link (and a code, when the email template includes one). The link brings you back here signed in. */
 export async function sendSignIn(email: string) {
   const sb = await supabase();
   const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
