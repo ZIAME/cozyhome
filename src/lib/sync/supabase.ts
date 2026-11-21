@@ -6,8 +6,10 @@ import type { Changes, Remote, RItem, RSalah, RSetting } from "./engine";
  * Supabase: sign-in by email, and the cloud side of sync (tables in supabase/schema.sql, photos in the
  * private "photos" bucket). Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to turn it on.
  */
-const URL_ = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+/** The project's base address. Tolerates a pasted REST endpoint (…/rest/v1/), a trailing slash or spaces. */
+export const baseUrl = (u: string) => u.trim().replace(/\/+(rest|auth|storage)\/v1\/?.*$/i, "").replace(/\/+$/, "");
+const URL_ = baseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+const KEY = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "").trim();
 export const syncConfigured = !!(URL_ && KEY);
 
 let client: Promise<SupabaseClient> | null = null;
