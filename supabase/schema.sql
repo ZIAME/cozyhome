@@ -78,6 +78,24 @@ create policy own_photos on storage.objects for all to authenticated
   using (bucket_id = 'photos' and (storage.foldername(name))[1] = auth.uid()::text)
   with check (bucket_id = 'photos' and (storage.foldername(name))[1] = auth.uid()::text);
 
+-- Daily topic notifications: one row per device that asked for them (endpoint = the browser's push address).
+create table if not exists public.push_subscriptions (
+  endpoint      text primary key,
+  user_id       uuid not null default auth.uid() references auth.users on delete cascade,
+  p256dh        text not null,
+  auth          text not null,
+  minute_of_day int  not null default 480 check (minute_of_day between 0 and 1439),
+  tz            text not null default 'UTC',
+  enabled       boolean not null default true,
+  last_sent     text,
+  created_at    timestamptz not null default now()
+);
+alter table public.push_subscriptions enable row level security;
+drop policy if exists own_rows on public.push_subscriptions;
+create policy own_rows on public.push_subscriptions for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+grant select, insert, update, delete on public.push_subscriptions to authenticated;
+revoke all on public.push_subscriptions from anon;
+
 -- Delete my account: removes the person's rows and their sign-in. The app deletes their photos first.
 create or replace function public.delete_my_account() returns void language plpgsql security definer set search_path = public as $$
 begin
@@ -85,6 +103,7 @@ begin
   delete from public.items where user_id = auth.uid();
   delete from public.salah_days where user_id = auth.uid();
   delete from public.settings where user_id = auth.uid();
+  delete from public.push_subscriptions where user_id = auth.uid();
   delete from auth.users where id = auth.uid();
 end $$;
 revoke all on function public.delete_my_account() from public, anon;

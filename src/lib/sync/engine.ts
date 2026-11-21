@@ -31,7 +31,7 @@ export const FRESH: SyncState = { pushedAt: 0, cursor: null };
 export type SyncResult = { state: SyncState; pushed: number; pulled: number };
 
 /** Settings that describe this device only; they never sync. */
-export const localOnly = (key: string) => key.startsWith("sync:") || key.startsWith("backup:");
+export const localOnly = (key: string) => key.startsWith("sync:") || key.startsWith("backup:") || key.startsWith("push:");
 
 /**
  * One round of sync. Normally: push our changes, then pull theirs.

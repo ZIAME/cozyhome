@@ -10,6 +10,9 @@ import { PrayerTimesBox } from "./Onboarding";
 import { StreakToggle } from "@/diary/privacy";
 import { ReportMistake } from "./Report";
 import { Credits, Privacy } from "./Legal";
+import { disablePush, enablePush, isSubscribed, pushSupport, savedTime, testNotification, type PushSupport } from "@/lib/push";
+import { useSyncStatus } from "@/lib/sync";
+import { useTopicOfDay } from "@/lib/topic";
 
 const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
 
@@ -31,6 +34,8 @@ export function SettingsSheet({ open, onClose, hasDeen, onEditDetails, onBackup 
     <Modal open={open} eyebrow="Your room" title="Settings" onClose={onClose} wide>
       {profile && <YouSection profile={profile} save={save} onEditDetails={onEditDetails} />}
       {profile && hasDeen && <PrayerSection profile={profile} save={save} />}
+
+      {hasDeen && <NotifySection onBackup={onBackup} />}
 
       <section className="bk-sec">
         <h3>Privacy</h3>
@@ -108,6 +113,49 @@ function PrayerSection({ profile, save }: { profile: Profile; save: (p: Profile)
       {Math.abs(profile.place.lat) <= 48 && <p className="mnote">Only matters far north or south, where summer nights are short.</p>}
       <PrayerTimesBox place={profile.place} prayer={p} onChange={set} bare />
       {!usual && <button className="ob-link" onClick={() => set({ ...p, ...d })}>Go back to the usual settings</button>}
+    </section>
+  );
+}
+
+const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+
+/** Daily topic notification: on/off and the time, for this device. */
+function NotifySection({ onBackup }: { onBackup: () => void }) {
+  const sync = useSyncStatus();
+  const [topic] = useTopicOfDay();
+  const [support, setSupport] = useState<PushSupport>("off");
+  const [on, setOn] = useState(false);
+  const [time, setTime] = useState(480);
+  const [msg, setMsg] = useState(""), [wait, setWait] = useState(false);
+  useEffect(() => { setSupport(pushSupport()); setTime(savedTime()); isSubscribed().then(setOn).catch(() => setOn(false)); }, []);
+  const run = async (fn: () => Promise<unknown>, ok?: string) => {
+    setWait(true); setMsg("");
+    try { await fn(); if (ok) setMsg(ok); } catch (e) { setMsg(e instanceof Error ? e.message : "That didn’t work. Try again."); } finally { setWait(false); }
+  };
+  const turn = (v: boolean) => run(async () => { if (v) await enablePush(time); else await disablePush(); setOn(v); },
+    v ? `Done. You’ll get today’s topic at ${hhmm(time)} every day.` : "Daily notifications are off on this device.");
+
+  let body: React.ReactNode;
+  if (support === "off") body = <p className="mnote">Daily notifications aren’t switched on in this version yet. Your topic is waiting in the Library each day.</p>;
+  else if (support === "unsupported") body = <p className="mnote">This browser can’t show notifications. Try Chrome, or install the app to your Home Screen.</p>;
+  else if (support === "ios-home-screen") body = <p className="mnote">On iPhone, notifications work from the app on your Home Screen: in Safari, tap Share → Add to Home Screen, open Cozy Home from there, and turn this on.</p>;
+  else if (!sync.email) body = <div className="bk-row"><div><b>Sign in first</b><small>Notifications come through your account, so sign in to sync on this device.</small></div><button className="ghost-btn" onClick={onBackup}>Backup & sync</button></div>;
+  else body = <>
+    <div className="bk-row">
+      <div><b>Daily research topic</b><small>A notification each day with your Deen topic. Tap it to open the Library.</small></div>
+      <button className={"sw" + (on ? " on" : "")} role="switch" aria-checked={on} aria-label="Daily research topic notification" disabled={wait} onClick={() => turn(!on)}><i /></button>
+    </div>
+    <label className="bk-row"><div><b>At</b><small>Your local time. Each device has its own.</small></div>
+      <input className="k-in st-time" type="time" value={hhmm(time)} aria-label="Notification time"
+        onChange={e => { const [h, m] = e.target.value.split(":").map(Number); if (!Number.isNaN(h)) setTime(h * 60 + (m || 0)); }}
+        onBlur={() => { if (on) run(() => enablePush(time), `Moved to ${hhmm(time)}.`); }} /></label>
+    {on && <button className="ob-link" onClick={() => run(() => testNotification(`${topic.title} · ${topic.cat}`), "Sent a test notification to this device.")}>Show a test notification</button>}
+  </>;
+  return (
+    <section className="bk-sec">
+      <h3>Notifications</h3>
+      {body}
+      {msg && <p className="mnote" role="status">{msg}</p>}
     </section>
   );
 }

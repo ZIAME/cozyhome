@@ -1,5 +1,5 @@
-// Afra's Home service worker: app shell offline, fresh when online.
-const CACHE = "afras-home-v1";
+// Cozy Home service worker: app shell offline, fresh when online, and the daily topic notification.
+const CACHE = "cozy-home-v2";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -21,4 +21,22 @@ self.addEventListener("fetch", e => {
     if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
     return r;
   })));
+});
+
+// Daily topic notification (sent by the Supabase function daily-topic).
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(d.title || "Today’s research topic", {
+    body: d.body || "", icon: "/icons/icon-192.png", badge: "/icons/icon-192.png", tag: d.tag || "daily-topic", data: { url: d.url || "/?open=deen/library" },
+  }));
+});
+// Tapping it opens (or focuses) the app on the Library.
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "/";
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(wins => {
+    for (const w of wins) if ("focus" in w) return w.navigate(url).then(x => (x || w).focus()).catch(() => w.focus());
+    return self.clients.openWindow(url);
+  }));
 });

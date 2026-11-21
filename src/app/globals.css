@@ -676,6 +676,7 @@ label.ghost-btn{display:inline-block}
 .sw.on{background:var(--ember)}.sw.on i{transform:translateX(18px)}
 .sw:focus-visible,.ghost-btn:focus-visible{outline:3px solid #E9A23B;outline-offset:2px}
 .st-name{max-width:180px}
+.st-time{max-width:130px}
 label.bk-row{cursor:text}
 .legal{display:flex;flex-direction:column;gap:14px;color:var(--cocoa)}
 .legal section{display:flex;flex-direction:column;gap:6px}
