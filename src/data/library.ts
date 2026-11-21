@@ -37,3 +37,16 @@ export const LIBRARY: { id: string; topics: string[] }[] = [
     "Surah al-Mulk", "Surah Yusuf", "Surah Maryam", "The three Quls", "Surah al-Asr", "Surah ad-Duha", "Surah al-Hujurat", "Surah Luqman",
   ] },
 ];
+
+const ALL: LibraryTopic[] = LIBRARY.flatMap(c => c.topics.map(title => ({ cat: c.id, title })));
+const seed = (s: string) => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+
+/** The topic the app picks for a day: random, but the same all day and on every device. */
+export function topicFor(day: string): LibraryTopic {
+  return ALL[seed("topic:" + day) % ALL.length];
+}
+/** Another random topic (optionally from one category), never the one shown now. */
+export function anotherTopic(cat: string, not?: string): LibraryTopic {
+  const pool = ALL.filter(t => (!cat || t.cat === cat) && t.title !== not);
+  return pool[Math.floor(Math.random() * pool.length)];
+}

@@ -9,7 +9,8 @@ import { FALLBACK, useProfile } from "@/lib/profile";
 import { addItem, str, updateItem, useItems } from "@/lib/items";
 import { useShared } from "@/lib/shared";
 import { SURAHS, TOTAL_AYAHS } from "@/data/surahs";
-import { LIBRARY, type LibraryTopic } from "@/data/library";
+import { LIBRARY, anotherTopic } from "@/data/library";
+import { useTopicOfDay } from "@/lib/topic";
 import { Board, DayNav, Empty, Form, ItemList, MonthGrid, PageHead, Section, Tag, monthStart, prettyDay, streaks, useDay, useShowSide } from "./kit";
 import { useHideStreaks, StreakToggle } from "./privacy";
 import { ReportMistake } from "@/components/Report";
@@ -238,27 +239,24 @@ const RESEARCH_FIELDS = [
 ];
 export function LibraryLeft() {
   const [cat, setCat] = useShared<string>("lib:cat", "");
-  const [pick, setPick] = useState<LibraryTopic | null>(null);
-  const [added, setAdded] = useState("");
-  const roll = () => {
-    const pool = LIBRARY.filter(c => !cat || c.id === cat).flatMap(c => c.topics.map(t => ({ cat: c.id, title: t })));
-    setPick(pool[Math.floor(Math.random() * pool.length)]); setAdded("");
-  };
+  const [pick, setTopic] = useTopicOfDay();
+  const research = useItems("deen", "research");
+  const added = !!research?.some(r => r.f.title === pick.title);
+  const roll = () => setTopic(anotherTopic(cat, pick.title));
   return (
     <>
-      <PageHead eyebrow="Deen · Library" title="Give me a topic" desc="Titles only. Read about it from a trusted teacher or book." />
+      <PageHead eyebrow="Deen · Library" title="Today’s topic" desc="A new one every day. Titles only: read about it from a trusted teacher or book." />
       <div className="k-chips">
         <button className={"k-chip" + (!cat ? " on" : "")} onClick={() => setCat("")}>Anything</button>
         {LIBRARY.map(c => <button key={c.id} className={"k-chip" + (cat === c.id ? " on" : "")} onClick={() => setCat(c.id)}>{c.id}</button>)}
       </div>
       <div className="k-jar">
-        <div className="k-jar-glass">{pick ? <><Tag tone="soft">{pick.cat}</Tag><b className="lib-t">{pick.title}</b></> : <span className="k-empty">Tap the button for a topic.</span>}</div>
+        <div className="k-jar-glass"><Tag tone="soft">{pick.cat}</Tag><b className="lib-t">{pick.title}</b></div>
         <div className="k-actions">
-          <button className="k-btn" onClick={roll}>{pick ? "Another one" : "Give me a topic"}</button>
-          {pick && <button className="k-btn ghost" disabled={added === pick.title}
-            onClick={async () => { await addItem("deen", "research", { title: pick.title, category: pick.cat, status: RESEARCH[0] }); setAdded(pick.title); }}>{added === pick.title ? "Added ✓" : "Add to my research"}</button>}
+          <button className="k-btn" disabled={added} onClick={() => addItem("deen", "research", { title: pick.title, category: pick.cat, status: RESEARCH[0] })}>{added ? "In my research ✓" : "Add to my research"}</button>
+          <button className="k-btn ghost" onClick={roll}>{cat ? `Another ${cat} topic` : "Another one"}</button>
         </div>
-        {pick && <ReportMistake what={`Library topic (${pick.cat})`} details={`Topic shown: ${pick.title}`} />}
+        <ReportMistake what={`Library topic (${pick.cat})`} details={`Topic shown: ${pick.title}`} />
       </div>
     </>
   );

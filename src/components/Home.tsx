@@ -25,6 +25,7 @@ import { ArrangeBar, ArrangeIcon, DrawerSheet, SpotSheet } from "./Arrange";
 import { Onboarding, type OnboardResult } from "./Onboarding";
 import { BackupSheet } from "./Backup";
 import { clearNotice, useAutoSync, useSyncStatus } from "@/lib/sync";
+import { useTopicOfDay } from "@/lib/topic";
 import { askPersistence } from "@/lib/backup";
 import { useApplyDisplay, useDisplay } from "@/lib/display";
 import { SettingsSheet } from "./Settings";
@@ -65,10 +66,22 @@ export function Home() {
   useApplyDisplay(display);
   useAutoSync();
   const syncStatus = useSyncStatus();
+  const [topic] = useTopicOfDay();
   useEffect(() => { if (syncStatus.notice) { showToast(syncStatus.notice); clearNotice(); } }, [syncStatus.notice]);
   const [reveal, setReveal] = useState(false);
   const onboarding = profileLoaded && (!profile || editing);
   const ready = profileLoaded && loaded && !!profile;
+  // once a day, the first time the room opens: today's research topic (people who use Deen)
+  useEffect(() => {
+    if (!ready || !hasDeen || reveal || onboarding) return;
+    const key = "cozy-topic-nudge", day = today;
+    try { if (localStorage.getItem(key) === day) return; } catch { return; }
+    const t = setTimeout(() => {
+      showToast(`Today’s research topic: ${topic.title}. It’s waiting in your Library.`);
+      try { localStorage.setItem(key, day); } catch { /* private mode */ }
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [ready, hasDeen, reveal, onboarding, today, topic.title]);
 
   /** Save onboarding (or edited details), set the room up for the picks, and let the room build itself the first time. */
   const finishOnboarding = useCallback(({ profile: p, picked }: OnboardResult) => {
@@ -134,12 +147,12 @@ export function Home() {
     const tab = t.tabs.find(x => x.id === p.tab);
     const count = prayedDots.filter(Boolean).length, n = nextPrayer(P, min);
     const subs: Record<string, string> = {
-      "deen/salah": todayDay.period ? "Rest days: prayers excused" : `${count} of 5 prayed today`, "deen/quran": "Ayah of the day", "deen/library": "Seerah, Sahabah, Tafsir & more",
+      "deen/salah": todayDay.period ? "Rest days: prayers excused" : `${count} of 5 prayed today`, "deen/quran": "Ayah of the day", "deen/library": `Today: ${topic.title}`,
       journal: "Write a little", planner: "Today & this week", hobbies: "Idea jar, experiments, inspiration",
       design: "Work board & projects", content: "Ideas → drafts → posted", today: hasDeen ? `Next prayer: ${n.name} at ${fmtMin(n.at)}` : t.sub,
     };
     return { title: tab ? `${t.title} · ${tab.label}` : t.title, sub: subs[`${t.id}/${tab?.id}`] ?? subs[t.id] ?? t.sub };
-  }, [theme, layout, arranging, prayedDots, P, min, focus, hasDeen, todayDay.period]);
+  }, [theme, layout, arranging, prayedDots, P, min, focus, hasDeen, todayDay.period, topic.title]);
 
   const placeOn = useCallback((spot: string, p: Placement) => {
     const r = place(layout, theme, spot, p);
@@ -168,7 +181,7 @@ export function Home() {
         {arranging ? <ArrangeBar layout={layout} onDone={() => setArranging(false)} /> : (
           <Pills P={P} min={min} today={todayDay} curDay={curDay} focus={focus} showPrayer={hasDeen} drawerCount={drawerCount}
             onToggle={() => cur && togglePrayed(curDate, cur.name, P)}
-            onGo={r => (r === "focus" ? enter("clock") : r === "drawer" ? setDrawerOpen(true) : r === "quran" ? openTracker("deen", "quran") : openTracker("deen", "salah"))} />
+            onGo={r => (r === "focus" ? enter("clock") : r === "drawer" ? setDrawerOpen(true) : r === "library" ? openTracker("deen", "library") : openTracker("deen", "salah"))} />
         )}
       </main>
       <Diary target={diaryTarget} onClosed={leave} />
