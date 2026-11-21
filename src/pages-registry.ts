@@ -3,6 +3,7 @@ import * as D from "@/diary/deen";
 import * as M from "@/diary/mind";
 import * as W from "@/diary/work";
 import * as L from "@/diary/life";
+import * as SB from "@/diary/scrapbook";
 
 type Spread = { left: ComponentType; right: ComponentType };
 const s = (left: ComponentType, right: ComponentType): Spread => ({ left, right });
@@ -23,6 +24,6 @@ export const PAGES: Record<string, Record<string, Spread>> = {
   habits: { today: s(L.HabitsTodayLeft, L.HabitsTodayRight), streaks: s(L.HabitsStreaksLeft, L.HabitsStreaksRight) },
   reading: { shelf: s(L.ReadingShelfLeft, L.ReadingShelfRight), finished: s(L.ReadingDoneLeft, L.ReadingDoneRight) },
   fitness: { today: s(L.FitTodayLeft, L.FitTodayRight), log: s(L.FitLogLeft, L.FitLogRight) },
-  hobbies: { hobbies: s(L.HobbiesLeft, L.HobbiesRight), ideas: s(L.HobbyJarLeft, L.HobbyJarRight), inspo: s(L.InspoLeft, L.InspoRight), experiments: s(L.ExperimentsLeft, L.ExperimentsRight) },
+  hobbies: { hobbies: s(L.HobbiesLeft, L.HobbiesRight), ideas: s(L.HobbyJarLeft, L.HobbyJarRight), inspo: s(L.InspoLeft, L.InspoRight), scrapbook: s(SB.ScrapLeft, SB.ScrapRight), experiments: s(L.ExperimentsLeft, L.ExperimentsRight) },
   today: { streaks: s(L.TodayLeft, L.TodayRight) },
 };

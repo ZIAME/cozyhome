@@ -11,11 +11,14 @@ import { isStill } from "@/lib/display";
  */
 type Pt = [number, number];
 /**
- * Open floor in the cabin, in room SVG units: in front of the furniture so the cat never walks through it,
- * and off the rug, so it never sits or sleeps on a prayer mat.
+ * Open floor in the cabin, in room SVG units: well inside the floor's edges (26+ units), in front of the sofa and
+ * table, and off the prayer mat and the Quran. Every straight path between two spots stays clear of both too.
+ * (Checked against the floor outline and the mat's corners; see the commit that added them.)
  */
-const SPOTS: Pt[] = [[118, 372], [160, 398], [198, 425], [262, 446], [305, 432], [350, 412], [392, 392]];
-const BED: Pt = [148, 386]; // in front of the sofa
+const SPOTS: Pt[] = [[112, 353], [138, 362], [158, 373], [182, 383], [204, 388]];
+const BED: Pt = [162, 382]; // in front of the sofa
+/** How long the cat's bubble stays when it speaks on its own, and after a tap. */
+const AUTO_MS = 3000, TAP_MS = 4500;
 const SPEED = 14; // units per second
 const ORANGE = "#E8862E", STRIPE = "#C0621C", CREAM = "#FFE7C4", PINK = "#E8A091", INK = "#3A2316";
 
@@ -96,7 +99,8 @@ export function Cat({ stage, hidden, night, next, onOpen }: Props) {
   const [dur, setDur] = useState(0);
   const [dir, setDir] = useState<1 | -1>(1);
   const [mode, setMode] = useState<Mode>("sit");
-  const [say, setSay] = useState(false);
+  /** null: quiet. "auto": the cat speaks on its own (never blocks clicks). "user": you hovered or tapped it. */
+  const [say, setSay] = useState<null | "auto" | "user">(null);
   const [bubbleAt, setBubbleAt] = useState<{ x: number; y: number } | null>(null);
   const cat = useRef<SVGGElement>(null);
   const armed = useRef(false);
@@ -118,7 +122,7 @@ export function Cat({ stage, hidden, night, next, onOpen }: Props) {
   const walkTo = useCallback((to: Pt, then: Mode) => {
     const still = isStill();
     const d = still ? 0 : dist(at.current, to);
-    setDir(to[0] >= at.current[0] ? 1 : -1); setDur(d / SPEED); setSay(false);
+    setDir(to[0] >= at.current[0] ? 1 : -1); setDur(d / SPEED); setSay(null);
     at.current = to; arrive.current = then; setPos(to); setMode("walk");
   }, []);
 
@@ -131,7 +135,7 @@ export function Cat({ stage, hidden, night, next, onOpen }: Props) {
     else if (night && mode !== "sleep") walkTo(BED, "sleep");
     else if (!night && mode === "sleep") setMode("sit");
     else if (mode === "sit" && !isStill()) {
-      if (Math.random() < 0.55) { later(() => setSay(true), 700); later(() => setSay(false), 6200); }
+      if (Math.random() < 0.4) { later(() => setSay(s => s ?? "auto"), 900); later(() => setSay(s => (s === "auto" ? null : s)), 900 + AUTO_MS); }
       later(() => walkTo(pick(SPOTS.filter(p => dist(p, at.current) > 30)), "sit"), 7000 + Math.random() * 7000);
     }
     return () => timers.forEach(clearTimeout);
@@ -152,15 +156,17 @@ export function Cat({ stage, hidden, night, next, onOpen }: Props) {
 
   useEffect(() => {
     if (!say) return;
-    const away = (e: Event) => { if (!(e.target as Element).closest?.("#cat, .cat-bubble")) { setSay(false); armed.current = false; } };
+    const away = (e: Event) => { if (!(e.target as Element).closest?.("#cat, .cat-bubble")) { setSay(null); armed.current = false; } };
     document.addEventListener("click", away);
-    return () => document.removeEventListener("click", away);
+    // a tapped bubble also goes away on its own
+    const t = say === "user" && armed.current ? window.setTimeout(() => { setSay(null); armed.current = false; }, TAP_MS) : 0;
+    return () => { document.removeEventListener("click", away); clearTimeout(t); };
   }, [say]);
 
   const tap = () => {
     // first tap (or a tap while it's quiet) says the task; a tap while it's talking opens it
-    if (say && (armed.current || !matchMedia("(hover:none)").matches)) { setSay(false); armed.current = false; onOpen(next); return; }
-    setSay(true); armed.current = true;
+    if (say === "user" && (armed.current || !matchMedia("(hover:none)").matches)) { setSay(null); armed.current = false; onOpen(next); return; }
+    armed.current = true; setSay("user");
   };
   const line = mode === "sleep" ? "Zzz… see you after Fajr." : next ? next.title : "Your day is clear. Plan something?";
   const sub = mode === "sleep" ? "" : next ? `${next.from} · ${next.note}` : "";
@@ -172,13 +178,13 @@ export function Cat({ stage, hidden, night, next, onOpen }: Props) {
         aria-label={next ? `Cat: your next task is ${next.title}. Open it.` : "Cat: your day is clear."}
         style={{ transform: `translate(${pos[0]}px, ${pos[1]}px)`, transition: mode === "walk" ? `transform ${dur}s linear` : "none" }}
         onClick={e => { e.stopPropagation(); tap(); }} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(next); } }}
-        onPointerEnter={e => { if (e.pointerType !== "touch") setSay(true); }} onPointerLeave={e => { if (e.pointerType !== "touch") setSay(false); }}>
+        onPointerEnter={e => { if (e.pointerType !== "touch") setSay("user"); }} onPointerLeave={e => { if (e.pointerType !== "touch") { setSay(null); armed.current = false; } }}>
         <ellipse cx="0" cy="0" rx="11" ry="2.8" fill="#3A2316" opacity=".18" />
         <g style={{ transform: `scale(${0.95 * dir}, 0.95)` }}>{mode === "walk" ? <Walking /> : mode === "sleep" ? <Sleeping /> : <Sitting />}</g>
       </g>, layer)}
-    <div className={"cat-bubble" + (bubbleAt ? " show" : "")} style={bubbleAt ? { left: bubbleAt.x, top: bubbleAt.y } : undefined} role="status" aria-live="polite"
-      onClick={() => { if (mode !== "sleep") { setSay(false); onOpen(next); } }}>
-      <b>{line}</b>{sub && <small>{sub}</small>}{mode !== "sleep" && <span className="go">{next ? "Tap to open →" : "Open the planner →"}</span>}
+    <div className={"cat-bubble" + (bubbleAt ? " show" : "") + (say === "auto" ? " passive" : "")} style={bubbleAt ? { left: bubbleAt.x, top: bubbleAt.y } : undefined} role="status" aria-live="polite"
+      onClick={() => { if (mode !== "sleep") { setSay(null); onOpen(next); } }}>
+      <b>{line}</b>{sub && <small>{sub}</small>}{mode !== "sleep" && say === "user" && <span className="go">{next ? "Tap to open →" : "Open the planner →"}</span>}
     </div>
   </>;
 }

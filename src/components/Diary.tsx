@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { SECTIONS } from "@/data/sections";
 import { PAGES } from "@/pages-registry";
 import { useMedia } from "@/hooks/useMedia";
+import { useShared } from "@/lib/shared";
 import { STICKERS } from "./Stickers";
 import { HomeIcon } from "./Icons";
 
@@ -70,6 +71,15 @@ export function Diary({ target, onClosed }: { target: Target; onClosed: () => vo
     busy.current = true; setFlip({ from: idx, to: i }); setIdx(i);
     setTimeout(() => { setFlip(null); busy.current = false; }, FLIP_MS + 20);
   }, [sec, idx]);
+
+  // a page can ask the diary to turn to another tab (e.g. saving an image turns to the scrapbook)
+  const [turnTo, setTurnTo] = useShared<string | null>("diary:goto", null);
+  useEffect(() => {
+    if (!turnTo || !sec) return;
+    const i = SECTIONS[sec].tabs.findIndex(t => t.id === turnTo);
+    setTurnTo(null);
+    if (i >= 0) goto(i);
+  }, [turnTo, sec, goto, setTurnTo]);
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => { if (e.key === "Escape" && phase === "opened") close(); };

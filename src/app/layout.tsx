@@ -8,6 +8,8 @@ import "@fontsource/nunito/700.css";
 import "@fontsource/nunito/800.css";
 import "@fontsource/amiri/400.css";
 import "@fontsource/amiri/700.css";
+import "@fontsource/caveat/500.css";
+import "@fontsource/caveat/700.css";
 import "./globals.css";
 import { RegisterSW } from "@/components/RegisterSW";
 

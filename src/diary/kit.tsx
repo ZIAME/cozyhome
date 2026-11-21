@@ -266,13 +266,20 @@ export const daysUntil = (d: string) => Math.round((fromYmd(d).getTime() - fromY
 export const dueText = (d: string) => { const n = daysUntil(d); return n === 0 ? "due today" : n === 1 ? "due tomorrow" : n < 0 ? `${-n} day${n === -1 ? "" : "s"} late` : `in ${n} days`; };
 export const Tag = ({ children, tone }: { children: React.ReactNode; tone?: "warn" | "good" | "soft" }) => <span className={"k-tag" + (tone ? " " + tone : "")}>{children}</span>;
 
-/** Consecutive days ending today (or yesterday, if today isn't done yet) for which `has(day)` is true, and the longest run. */
-export function streaks(days: Set<string>) {
+/**
+ * Streaks: consecutive days in `days`, ending today (or yesterday, if today isn't done yet), and the longest run.
+ * Days in `skip` (period days, for prayer) don't count, but they don't break a run either.
+ */
+export function streaks(days: Set<string>, skip: Set<string> = new Set()) {
   const t = todayStr();
-  let cur = 0, d = days.has(t) ? t : addDays(t, -1);
-  while (days.has(d)) { cur++; d = addDays(d, -1); }
-  const sorted = [...days].sort(); let best = 0, run = 0, prev = "";
-  for (const s of sorted) { run = prev && addDays(prev, 1) === s ? run + 1 : 1; best = Math.max(best, run); prev = s; }
+  let cur = 0, d = days.has(t) || skip.has(t) ? t : addDays(t, -1);
+  while (days.has(d) || skip.has(d)) { if (days.has(d)) cur++; d = addDays(d, -1); }
+  const sorted = [...new Set([...days, ...skip])].sort(); let best = 0, run = 0, prev = "";
+  for (const s of sorted) {
+    if (!(prev && addDays(prev, 1) === s)) run = 0;
+    if (days.has(s)) run++;
+    best = Math.max(best, run); prev = s;
+  }
   return { cur, best };
 }
 

@@ -14,6 +14,7 @@ import { TRACKER } from "@/room/catalogue";
 import { Board, DeleteButton, Empty, Form, ItemList, Jar, PageHead, Section, Tag, daysUntil, dueText, prettyDay, streaks, type Field } from "./kit";
 import { Photo } from "./mind";
 import { StreakToggle, useHideStreaks } from "./privacy";
+import { addElement } from "./scrapbook";
 
 const names = (a: Item[] | undefined, key = "name") => [...new Set((a ?? []).map(i => str(i.f[key])).filter(Boolean))];
 
@@ -267,8 +268,18 @@ export const HobbyJarRight = () => <><h3 className="k-h3">In the jar</h3><ItemLi
 export function InspoLeft() {
   const [file, setFile] = useState<File | null>(null);
   const [note, setNote] = useState(""), [src, setSrc] = useState("");
-  return <><PageHead eyebrow="Hobbies · Inspiration" title="Save an image" desc="Images stay on this device." />
-    <form className="k-form" onSubmit={async e => { e.preventDefault(); if (!file) return; await addItem("hobbies", "inspo", { note, source: src }, { date: todayStr(), blob: file }); setFile(null); setNote(""); setSrc(""); (e.target as HTMLFormElement).reset(); }}>
+  const [spread, setSpread] = useShared<string | null>("scrap:spread", null);
+  const [, setSel] = useShared<string | null>("scrap:sel", null);
+  const [, turnTo] = useShared<string | null>("diary:goto", null);
+  return <><PageHead eyebrow="Hobbies · Inspiration" title="Save an image" desc="Saved images go on your board, and onto a scrapbook spread to decorate." />
+    <form className="k-form" onSubmit={async e => {
+      e.preventDefault(); if (!file) return;
+      const im = await addItem("hobbies", "inspo", { note, source: src }, { date: todayStr(), blob: file });
+      setFile(null); setNote(""); setSrc(""); (e.target as HTMLFormElement).reset();
+      // turn the page to the scrapbook, with the new image placed and ready to move
+      const r = await addElement(spread, { type: "image", side: "left", x: 50, y: 50, w: 50, rot: -2, src: im.id });
+      setSpread(r.spreadId); setSel(r.id); turnTo("scrapbook");
+    }}>
       <label className="k-field wide"><span>Image</span><input className="k-in" type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] ?? null)} /></label>
       <label className="k-field wide"><span>Note</span><input className="k-in" value={note} onChange={e => setNote(e.target.value)} /></label>
       <label className="k-field wide"><span>Where it’s from</span><input className="k-in" value={src} onChange={e => setSrc(e.target.value)} placeholder="A link or a name" /></label>
@@ -293,12 +304,13 @@ function useAllStreaks() {
   const read = useItems("deen", "read"), refl = useItems("deen", "reflection"), entries = useItems("journal", "entry"), focus = useItems("focus", "session");
   return useMemo(() => {
     const prayer = new Set((salah ?? []).filter(d => FIVE.every(k => isPrayed(d.p[k]))).map(d => d.date));
+    const period = new Set((salah ?? []).filter(d => d.period).map(d => d.date));
     const quran = new Set([...(read ?? []), ...(refl ?? [])].map(i => i.date!).filter(Boolean));
     const journal = new Set((entries ?? []).map(i => i.date!));
     const foc = new Set((focus ?? []).map(i => i.date!));
     return {
       rows: [
-        { id: "prayer", label: "All five prayers", s: streaks(prayer) }, { id: "quran", label: "Quran", s: streaks(quran) },
+        { id: "prayer", label: "All five prayers", s: streaks(prayer, period) }, { id: "quran", label: "Quran", s: streaks(quran) },
         { id: "journal", label: "Journal", s: streaks(journal) }, { id: "focus", label: "Focus sessions", s: streaks(foc) },
       ],
       totals: [

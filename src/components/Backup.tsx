@@ -120,7 +120,7 @@ function SyncSection() {
       </div>
       <div className="mrow">
         <button className="ghost-btn" onClick={() => run(signOut)}>Sign out</button>
-        <Confirm label="Delete my cloud data" sure="Tap again: delete account and cloud data" onGo={() => run(deleteCloudAccount, "Your account and everything in the cloud are deleted. This device still has your data.")} />
+        <Confirm className="ghost-btn red" label="Delete my cloud data" sure="Tap again: delete account and cloud data" onGo={() => run(deleteCloudAccount, "Your account and everything in the cloud are deleted. This device still has your data.")} />
       </div>
       <p className="mnote">Signing out keeps everything on this device. Deleting removes your account and everything stored in the cloud, photos included.</p>
       {msg && <p className="mnote" role="status">{msg}</p>}

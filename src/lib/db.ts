@@ -7,7 +7,12 @@ import Dexie, { type Table } from "dexie";
  * and which copy is newer.
  */
 export type PrayerStatus = "ontime" | "late" | "qada" | "missed";
-export interface SalahDay { date: string; p: Partial<Record<string, PrayerStatus>>; x: Partial<Record<"witr" | "tahajjud" | "sunnah", boolean>>; updated?: number }
+export interface SalahDay {
+  date: string; p: Partial<Record<string, PrayerStatus>>; x: Partial<Record<"witr" | "tahajjud" | "sunnah", boolean>>;
+  /** On her period that day: prayers are excused, and the day neither counts toward nor breaks a streak. */
+  period?: boolean;
+  updated?: number;
+}
 export interface Setting { key: string; value: unknown; updated?: number }
 /** A deleted item, remembered so the deletion reaches the cloud and other devices. */
 export interface Tombstone { id: string; at: number }

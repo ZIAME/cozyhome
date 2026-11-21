@@ -113,6 +113,7 @@ export const TRACKERS: Tracker[] = [
     { id: "hobbies", label: "My hobbies", desc: "A card for every hobby, with its own log.", blocks: [["Hobby cards"], ["Log"]] },
     { id: "ideas", label: "Idea jar", desc: "Drop ideas in, pull one out when you’re bored.", blocks: [["The jar"], ["All ideas"]] },
     { id: "inspo", label: "Inspiration", desc: "A board of images you save.", blocks: [["Add images"], ["Board"]] },
+    { id: "scrapbook", label: "Scrapbook", desc: "A free spread to decorate with your images, words, sticky notes and washi tape.", blocks: [["Canvas"]] },
     { id: "experiments", label: "Experiments", desc: "What you tried, what worked, what didn’t.", blocks: [["New experiment"], ["Log"]] },
   ] },
   { id: "today", title: "Today", sub: "streaks & stats", group: "life", home: ["screen"], icon: "sparkle", ...c("brown"), sticker: "star", tabs: [

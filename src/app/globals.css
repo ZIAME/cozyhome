@@ -1,7 +1,7 @@
 /* Afra's Home: global styles (home screen + diary shell). */
 
 :root{
-  --font-fredoka:'Fredoka'; --font-nunito:'Nunito'; --font-amiri:'Amiri';
+  --font-fredoka:'Fredoka'; --font-nunito:'Nunito'; --font-amiri:'Amiri'; --font-hand:'Caveat';
   --cocoa:#3A2316; --brown:#5C3A22; --ember:#D2692A; --honey:#E9A23B; --butter:#F2D27A;
   --caramel:#C98E4E; --oat:#EFE9DF; --peach:#E6CBB3; --blush:#E8A091; --cream:#FFF6E8;
   --ink:var(--cocoa); --ink-soft:rgba(58,35,22,.66);
@@ -642,6 +642,8 @@ textarea.k-in{resize:vertical;line-height:1.45}
   transition:opacity .2s,transform .25s cubic-bezier(.3,1.6,.5,1);background:#FFF6E8;color:var(--cocoa);border-radius:16px;padding:8px 13px 9px;text-align:center;
   box-shadow:0 10px 24px -8px rgba(58,35,22,.45),0 0 0 2px #E8862E;cursor:pointer}
 .cat-bubble.show{opacity:1;transform:translate(-50%,calc(-100% - 14px)) scale(1);pointer-events:auto}
+/* when the cat speaks on its own, clicks pass through the bubble to whatever is behind it */
+.cat-bubble.show.passive{pointer-events:none;opacity:.94}
 .cat-bubble::after{content:"";position:absolute;left:50%;bottom:-6px;width:11px;height:11px;margin-left:-5.5px;background:#FFF6E8;transform:rotate(45deg);box-shadow:2px 2px 0 0 #E8862E;border-radius:2px}
 .cat-bubble b{display:block;font-family:var(--font-fredoka),var(--font-nunito),sans-serif;font-weight:600;font-size:14.5px;line-height:1.2;overflow-wrap:anywhere}
 .cat-bubble small{display:block;font-weight:700;font-size:11.5px;color:#9A6B45;margin-top:2px}
@@ -659,6 +661,10 @@ textarea.k-in{resize:vertical;line-height:1.45}
 .bk-ok{flex:none;font-weight:800;font-size:13px;color:#4F6A1E}
 label.ghost-btn{display:inline-block}
 .ghost-btn.danger{background:#B5442A;border-color:#B5442A;color:#FFF6E8}
+/* destructive actions read as red even before they are armed */
+.ghost-btn.red{border-color:#C24A2E;color:#A8361C}
+.ghost-btn.red:hover{background:#FBE0D8}
+.ghost-btn.red.danger{color:#FFF6E8}
 .bk-restore{padding:12px;border-radius:16px;border:2px solid #E9A23B;background:#FFFBF4;display:flex;flex-direction:column;gap:8px}
 .bk-restore small{font-weight:700;font-size:12px;color:#8A6346}
 .bk-form{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
@@ -683,3 +689,51 @@ label.bk-row{cursor:text}
 .legal-page main{max-width:720px;margin:0 auto;display:block;min-height:0;padding:0;align-items:stretch}
 .legal-page h1{font-family:var(--font-fredoka),var(--font-nunito),sans-serif;font-weight:700;font-size:clamp(30px,5vw,42px);color:#7A3A18;margin:14px 0 18px}
 .legal-back{font-weight:800;font-size:14px;color:#9A5A2E}
+.s-period{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:14px;background:#F8E3EA;margin-bottom:8px}
+.s-period>div{display:flex;flex-direction:column}.s-period b{font-weight:800;font-size:13.5px}.s-period small{font-weight:700;font-size:12px;color:#8A5466}
+.s-rest{padding:14px 16px;border-radius:18px;background:#FBEFF3;display:flex;flex-direction:column;gap:8px;font-weight:600;font-size:14px;line-height:1.5;color:#5C3A3F}
+.pill.ayah .t{max-width:min(420px,70vw)}
+.ayah-l{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;text-align:left;line-height:1.3}
+
+/* ===================== SCRAPBOOK ===================== */
+.sb-page{position:absolute;inset:0;container-type:inline-size;overflow:hidden;touch-action:none;
+  background:radial-gradient(circle at 20% 15%,rgba(255,255,255,.5),transparent 40%),#FBF3E2}
+.cmb .sb-page{position:relative;inset:auto;aspect-ratio:3/4;border-radius:12px;margin-bottom:10px}
+.sb-hint{position:absolute;left:12%;right:12%;top:40%;text-align:center;font-family:var(--font-hand),cursive;font-size:6cqw;color:#B08A6A}
+.sb-el{position:absolute;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.sb-el:active{cursor:grabbing}
+.sb-el.sel{outline:2px dashed #D2692A;outline-offset:4px}
+.sb-image{background:#fff;padding:2.2cqw 2.2cqw 6cqw;box-shadow:0 1.2cqw 2.4cqw -1cqw rgba(58,35,22,.45)}
+.sb-image .k-photo{display:block;width:100%;max-height:none;margin:0;border-radius:0;box-shadow:none;pointer-events:none}
+.sb-missing{display:block;padding:8cqw 2cqw;text-align:center;font-weight:700;font-size:3cqw;color:#9A6B45}
+.sb-text .sb-text,.sb-text{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.15}
+.sb-el.sb-text{text-align:center}
+.sb-note{aspect-ratio:1;padding:3cqw;display:flex;align-items:center;justify-content:center;text-align:center;color:#3A2316;
+  box-shadow:0 1.4cqw 2cqw -1.2cqw rgba(58,35,22,.5)}
+.sb-note::before{content:"";position:absolute;left:30%;right:30%;top:-2cqw;height:4cqw;background:rgba(255,255,255,.55);transform:rotate(-3deg)}
+.sb-washi{opacity:.88;background-color:var(--tape);clip-path:polygon(0 8%,3% 0,6% 10%,9% 0,100% 0,97% 12%,100% 25%,97% 40%,100% 55%,97% 70%,100% 85%,97% 100%,0 100%,3% 88%,0 74%,3% 60%,0 45%,3% 30%)}
+.sb-el.sb-washi.sel{outline-offset:2px}
+.sb-h{position:absolute;width:3.2cqw;height:3.2cqw;min-width:16px;min-height:16px;border-radius:50%;background:#FFF6E8;border:2px solid #D2692A;touch-action:none}
+.sb-h.size{right:-8px;bottom:-8px;cursor:nwse-resize}
+.sb-h.rot{left:50%;top:-22px;margin-left:-8px;cursor:grab}
+.sb-h.rot::after{content:"";position:absolute;left:50%;top:100%;width:2px;height:8px;background:#D2692A;margin-left:-1px}
+.sb-tools{position:absolute;left:10px;right:10px;bottom:10px;z-index:9999;display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:16px;
+  background:rgba(255,250,240,.96);box-shadow:0 8px 22px -10px rgba(58,35,22,.55),0 0 0 1.5px #EBD3B0}
+/* phones: the tools sit under the page, so they never cover what you are decorating */
+.cmb .sb-tools{position:relative;left:auto;right:auto;bottom:auto;margin:0 0 12px}
+.sb-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.sb-tool{font:inherit;font-weight:800;font-size:12.5px;border:1.5px solid #E2C59C;background:#FFFBF4;color:#5C3A22;border-radius:999px;padding:5px 11px;cursor:pointer}
+.sb-tool:hover{background:#FBE7CC}
+.sb-spread{margin-left:auto;display:flex;align-items:center;gap:5px;font-weight:800;color:#9A6B45}
+.sb-spread .k-arrow{width:24px;height:24px;font-size:15px}
+.sb-picker{display:flex;flex-wrap:wrap;gap:6px;max-height:140px;overflow:auto}
+.sb-thumb{width:58px;height:58px;border-radius:10px;border:1.5px solid #E2C59C;background:#FFFBF4;padding:0;overflow:hidden;cursor:pointer;display:grid;place-items:center;font-weight:800;font-size:11px;color:#9A5A2E}
+.sb-thumb .k-photo{width:100%;height:100%;max-height:none;margin:0;border-radius:0;box-shadow:none;object-fit:cover}
+.sb-edit{border-top:1.5px dashed #EBD3B0;padding-top:6px}
+.sb-words{flex:1 1 100%;min-height:44px}
+.sb-step{display:inline-flex;flex-wrap:wrap;gap:4px}
+.sb-step button{font:inherit;font-weight:800;font-size:12px;border:0;background:#F3DFC0;color:#6B4426;border-radius:8px;padding:4px 8px;cursor:pointer}
+.sb-swatches{display:inline-flex;gap:4px}
+.sb-swatches button{width:20px;height:20px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #E2C59C;cursor:pointer;padding:0}
+.sb-swatches button.on{box-shadow:0 0 0 2px #3A2316}
+.sb-tool:focus-visible,.sb-thumb:focus-visible,.sb-step button:focus-visible,.sb-swatches button:focus-visible{outline:3px solid #E9A23B;outline-offset:2px}

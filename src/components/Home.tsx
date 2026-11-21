@@ -134,12 +134,12 @@ export function Home() {
     const tab = t.tabs.find(x => x.id === p.tab);
     const count = prayedDots.filter(Boolean).length, n = nextPrayer(P, min);
     const subs: Record<string, string> = {
-      "deen/salah": `${count} of 5 prayed today`, "deen/quran": "Ayah of the day", "deen/library": "Seerah, Sahabah, Tafsir & more",
+      "deen/salah": todayDay.period ? "Rest days: prayers excused" : `${count} of 5 prayed today`, "deen/quran": "Ayah of the day", "deen/library": "Seerah, Sahabah, Tafsir & more",
       journal: "Write a little", planner: "Today & this week", hobbies: "Idea jar, experiments, inspiration",
       design: "Work board & projects", content: "Ideas → drafts → posted", today: hasDeen ? `Next prayer: ${n.name} at ${fmtMin(n.at)}` : t.sub,
     };
     return { title: tab ? `${t.title} · ${tab.label}` : t.title, sub: subs[`${t.id}/${tab?.id}`] ?? subs[t.id] ?? t.sub };
-  }, [theme, layout, arranging, prayedDots, P, min, focus, hasDeen]);
+  }, [theme, layout, arranging, prayedDots, P, min, focus, hasDeen, todayDay.period]);
 
   const placeOn = useCallback((spot: string, p: Placement) => {
     const r = place(layout, theme, spot, p);
@@ -162,13 +162,13 @@ export function Home() {
         initial={editing && profile ? { profile, picked: layout.picked } : undefined} onCancel={() => setEditing(false)} />}
       {ready && !(onboarding && !editing) && <>
       <main>
-        <Header P={P} min={min} sky={sky} name={profile.name} showPrayer={hasDeen} />
+        <Header P={P} min={min} sky={sky} name={profile.name} showPrayer={hasDeen && !todayDay.period} />
         {loaded && <Room theme={theme} layout={layout} arranging={arranging} name={profile.name} reveal={reveal} sky={sky} P={P} min={min} prayedDots={prayedDots} focus={focus} label={label} onEnter={enter}
           zoomSpot={zoom?.spot ?? null} zoomFade={!!zoom?.fade} cat={{ next, night: catNight, onOpen: onCat }} />}
         {arranging ? <ArrangeBar layout={layout} onDone={() => setArranging(false)} /> : (
           <Pills P={P} min={min} today={todayDay} curDay={curDay} focus={focus} showPrayer={hasDeen} drawerCount={drawerCount}
             onToggle={() => cur && togglePrayed(curDate, cur.name, P)}
-            onGo={r => (r === "focus" ? enter("clock") : r === "drawer" ? setDrawerOpen(true) : openTracker("deen", "salah"))} />
+            onGo={r => (r === "focus" ? enter("clock") : r === "drawer" ? setDrawerOpen(true) : r === "quran" ? openTracker("deen", "quran") : openTracker("deen", "salah"))} />
         )}
       </main>
       <Diary target={diaryTarget} onClosed={leave} />

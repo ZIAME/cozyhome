@@ -30,7 +30,7 @@ export function Credits() {
       </section>
       <section>
         <h3>Typefaces</h3>
-        <p><A href="https://fonts.google.com/specimen/Fredoka">Fredoka</A>, <A href="https://fonts.google.com/specimen/Nunito">Nunito</A> and <A href="https://fonts.google.com/specimen/Amiri">Amiri</A>, under the SIL Open Font License 1.1, bundled through Fontsource so they work offline.</p>
+        <p><A href="https://fonts.google.com/specimen/Fredoka">Fredoka</A>, <A href="https://fonts.google.com/specimen/Nunito">Nunito</A>, <A href="https://fonts.google.com/specimen/Amiri">Amiri</A> and <A href="https://fonts.google.com/specimen/Caveat">Caveat</A>, under the SIL Open Font License 1.1, bundled through Fontsource so they work offline.</p>
       </section>
       <section>
         <h3>Software</h3>

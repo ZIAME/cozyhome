@@ -4,7 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db, type PrayerStatus, type SalahDay } from "@/lib/db";
 import { FIVE, dayTimes } from "@/lib/prayer";
 import { isPrayed } from "@/lib/salah";
-import { fmtMin, fromYmd, hash, todayStr } from "@/lib/dates";
+import { addDays, fmtMin, fromYmd, hash, todayStr } from "@/lib/dates";
 import { FALLBACK, useProfile } from "@/lib/profile";
 import { addItem, str, updateItem, useItems } from "@/lib/items";
 import { useShared } from "@/lib/shared";
@@ -38,10 +38,25 @@ export function SalahLeft() {
     await db.salah.put({ ...cur, x: { ...cur.x, [k]: !cur.x[k] } });
   };
   const n = FIVE.filter(k => isPrayed(d?.p[k])).length;
+  const yesterday = useSalahDay(addDays(day, -1));
+  const togglePeriod = async () => {
+    const cur = (await db.salah.get(day)) ?? emptyDay(day);
+    await db.salah.put({ ...cur, period: !cur.period });
+  };
   return (
     <>
       <PageHead eyebrow="Deen · Salah" title="Salah" desc="Mark each prayer. Qada counts as prayed." />
       <DayNav day={day} setDay={setDay} />
+      <div className="s-period">
+        <div><b>On my period</b><small>{d?.period ? "Prayers are excused today." : yesterday?.period ? "Marked yesterday. Still on it today?" : "Mark the days you don’t pray."}</small></div>
+        <button className={"sw" + (d?.period ? " on" : "")} role="switch" aria-checked={!!d?.period} aria-label="On my period this day" onClick={togglePeriod}><i /></button>
+      </div>
+      {d?.period ? (
+        <div className="s-rest">
+          <p><b>Rest, and be gentle with yourself.</b> These days don’t count toward your streak, and they don’t break it.</p>
+          <p>Dhikr, dua and listening to the Quran are always open to you. The ayah of the day is on the Quran tab.</p>
+        </div>
+      ) : <>
       <ul className="s-list">
         {FIVE.map(k => (
           <li key={k} className="s-row">
@@ -56,10 +71,12 @@ export function SalahLeft() {
         {EXTRAS.map(([k, label]) => <button key={k} role="checkbox" aria-checked={!!d?.x[k]} className={"k-chip" + (d?.x[k] ? " on" : "")} onClick={() => extra(k)}>{label}</button>)}
         <span className="s-count">{n}/5 prayed</span>
       </div>
+      </>}
     </>
   );
 }
 
+const PERIOD = "#EBC3D3";
 const HEAT = ["#F3E2C8", "#F2D27A", "#EDB55B", "#E39543", "#D97B33", "#C0601F"];
 export function SalahRight() {
   const [day, setDay] = useDay("salah");
@@ -69,13 +86,14 @@ export function SalahRight() {
   const by = useMemo(() => new Map((all ?? []).map(d => [d.date, d])), [all]);
   const count = (d: string) => FIVE.filter(k => isPrayed(by.get(d)?.p[k])).length;
   const full = useMemo(() => new Set((all ?? []).filter(d => FIVE.every(k => isPrayed(d.p[k]))).map(d => d.date)), [all]);
-  const { cur, best } = streaks(full);
+  const period = useMemo(() => new Set((all ?? []).filter(d => d.period).map(d => d.date)), [all]);
+  const { cur, best } = streaks(full, period);
   return (
     <>
       <Section title="This month" aside={<StreakToggle />}>
         <MonthGrid month={month} setMonth={setMonth} selected={day} onPick={d => d <= todayStr() && setDay(d)}
-          paint={d => (by.has(d) ? HEAT[count(d)] : null)} label={d => `${prettyDay(d)}: ${count(d)} of 5`} />
-        <div className="k-legend">{HEAT.map((c, i) => <span key={i}><i style={{ background: c }} />{i}</span>)}</div>
+          paint={d => (period.has(d) ? PERIOD : by.has(d) ? HEAT[count(d)] : null)} label={d => `${prettyDay(d)}: ${period.has(d) ? "period" : `${count(d)} of 5`}`} />
+        <div className="k-legend">{HEAT.map((c, i) => <span key={i}><i style={{ background: c }} />{i}</span>)}<span><i style={{ background: PERIOD }} />period</span></div>
       </Section>
       {!hidden && <div className="k-stats">
         <div><b>{cur}</b><small>day streak, all five</small></div>
