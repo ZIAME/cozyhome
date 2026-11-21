@@ -249,6 +249,12 @@ export function Jar({ items, render, label = "Pull one out", empty }: { items: I
 }
 
 // ---------- small helpers ----------
+/** On phones (one side at a time), show the left or right page. Does nothing on wider screens. */
+export function useShowSide() {
+  const [, set] = useShared<null | "left" | "right">("diary:side", null);
+  return set;
+}
+
 /** The day a page is looking at, shared between its left and right side. */
 export function useDay(key: string) { return useShared(`day:${key}`, todayStr()); }
 export function DayNav({ day, setDay }: { day: string; setDay: (d: string) => void }) {

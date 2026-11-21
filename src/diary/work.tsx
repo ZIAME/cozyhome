@@ -4,7 +4,7 @@ import { db, type Item } from "@/lib/db";
 import { addItem, num, setDayItem, str, updateItem, useDayItem, useItems } from "@/lib/items";
 import { addDays, todayStr } from "@/lib/dates";
 import { useShared } from "@/lib/shared";
-import { Board, Empty, Form, ItemList, MonthGrid, PageHead, Section, Tag, copyText, daysUntil, dueText, monthStart, prettyDay, streaks, type Field } from "./kit";
+import { useShowSide, Board, Empty, Form, ItemList, MonthGrid, PageHead, Section, Tag, copyText, daysUntil, dueText, monthStart, prettyDay, streaks, type Field } from "./kit";
 import { useHideStreaks } from "./privacy";
 
 // ---------- task boards (Work board, Design Studio) ----------
@@ -115,12 +115,13 @@ const postFields: Field[] = [
 ];
 export function ContentIdeasLeft() {
   const [, setOpen] = useShared<string | null>("post:open", null);
+  const showSide = useShowSide();
   return (
     <><PageHead eyebrow="Content Studio · Ideas" title="Idea bank" desc="LinkedIn, Instagram or YouTube. Draft any idea on the right." />
       <ItemList tracker="content" kind="post" add="Add an idea" empty="Ideas you jot down (or send from the Design notebook) land here."
         fields={postFields.filter(f => f.key !== "status")} defaults={{ status: "Idea", platform: "LinkedIn" }} filter={it => (str(it.f.status) || "Idea") === "Idea"}
         title={it => str(it.f.title)} meta={it => <>{it.f.platform ? <Tag tone="soft">{str(it.f.platform)}</Tag> : null}{it.f.from ? <Tag tone="soft">from {str(it.f.from)}</Tag> : null}</>}
-        actions={it => <button className="k-link" onClick={async () => { await updateItem(it.id, { status: "Drafting" }); setOpen(it.id); }}>Draft it →</button>} /></>
+        actions={it => <button className="k-link" onClick={async () => { await updateItem(it.id, { status: "Drafting" }); setOpen(it.id); showSide("right"); }}>Draft it →</button>} /></>
   );
 }
 export function ContentIdeasRight() {
@@ -164,8 +165,9 @@ export function ContentCalLeft() {
   const all = useItems("content", "post");
   const [day, setDay] = useShared("post:day", todayStr());
   const [month, setMonth] = useShared("post:month", monthStart(todayStr()));
+  const showSide = useShowSide();
   const dated = useMemo(() => new Set((all ?? []).map(p => str(p.f.date)).filter(Boolean)), [all]);
-  return <><PageHead eyebrow="Content Studio · Calendar" title="Posting calendar" /><MonthGrid month={month} setMonth={setMonth} selected={day} onPick={setDay} paint={d => (dated.has(d) ? "#F2D27A" : null)} /></>;
+  return <><PageHead eyebrow="Content Studio · Calendar" title="Posting calendar" /><MonthGrid month={month} setMonth={setMonth} selected={day} onPick={d => { setDay(d); showSide("right"); }} paint={d => (dated.has(d) ? "#F2D27A" : null)} /></>;
 }
 export function ContentCalRight() {
   const all = useItems("content", "post");
@@ -220,12 +222,13 @@ export const CodeLogRight = () => (
 const words = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0);
 export function WriterDraftsLeft() {
   const [, setOpen] = useShared<string | null>("piece:open", null);
+  const showSide = useShowSide();
   return (
     <><PageHead eyebrow="Writer’s nook · Drafts" title="Pieces" />
       <ItemList tracker="writer" kind="piece" add="Start a piece" empty="Start a piece and write it on the right." defaults={{ status: "Drafting" }}
         fields={[{ key: "title", label: "Title", required: true }, { key: "type", label: "Kind", type: "select", options: ["Essay", "Story", "Poem", "Article", "Other"] }, { key: "status", label: "Status", type: "select", options: ["Drafting", "Editing", "Finished"], required: true }]}
         title={it => str(it.f.title)} meta={it => <>{it.f.type ? <Tag tone="soft">{str(it.f.type)}</Tag> : null}<Tag>{str(it.f.status)}</Tag><small>{words(str(it.f.text)).toLocaleString()} words</small></>}
-        actions={it => <button className="k-link" onClick={() => setOpen(it.id)}>Open →</button>} /></>
+        actions={it => <button className="k-link" onClick={() => { setOpen(it.id); showSide("right"); }}>Open →</button>} /></>
   );
 }
 export function WriterDraftsRight() {

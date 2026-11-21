@@ -4,7 +4,7 @@ import type { Item } from "@/lib/db";
 import { addItem, num, removeItem, setDayItem, str, updateItem, useDayItem, useItems } from "@/lib/items";
 import { addDays, fromYmd, todayStr, ymd } from "@/lib/dates";
 import { useShared } from "@/lib/shared";
-import { DayNav, DeleteButton, Empty, Jar, MonthGrid, PageHead, Section, Tag, monthStart, prettyDay, streaks, useDay } from "./kit";
+import { useShowSide, DayNav, DeleteButton, Empty, Jar, MonthGrid, PageHead, Section, Tag, monthStart, prettyDay, streaks, useDay } from "./kit";
 import { useHideStreaks } from "./privacy";
 
 // ---------- mood scale (shared by Journal and Mood) ----------
@@ -110,6 +110,7 @@ function EntryView({ it, empty }: { it: Item | null | undefined; empty: string }
 export function JournalCalLeft() {
   const [day, setDay] = useDay("journal");
   const [month, setMonth] = useShared("j:month", monthStart(todayStr()));
+  const showSide = useShowSide();
   const all = useItems("journal", "entry");
   const hidden = useHideStreaks();
   const by = useMemo(() => new Map((all ?? []).map(e => [e.date!, e])), [all]);
@@ -117,7 +118,7 @@ export function JournalCalLeft() {
   return (
     <>
       <PageHead eyebrow="Journal · Calendar" title="Your days" desc="Coloured by mood. Tap a day to read it." />
-      <MonthGrid month={month} setMonth={setMonth} selected={day} onPick={setDay} paint={d => (by.has(d) ? moodColour(by.get(d)!.f.mood) ?? "#EBD3B0" : null)} />
+      <MonthGrid month={month} setMonth={setMonth} selected={day} onPick={d => { setDay(d); showSide("right"); }} paint={d => (by.has(d) ? moodColour(by.get(d)!.f.mood) ?? "#EBD3B0" : null)} />
       <div className="k-legend">{MOODS.map(m => <span key={m.v}><i style={{ background: m.c }} />{m.label}</span>)}</div>
       {!hidden && <p className="k-note">{cur ? `${cur}-day writing streak.` : "Write today to start a streak."}</p>}
     </>
@@ -170,9 +171,10 @@ export function MoodCheckRight() {
 export function MoodMonthLeft() {
   const [day, setDay] = useDay("mood");
   const [month, setMonth] = useShared("mood:month", monthStart(todayStr()));
+  const showSide = useShowSide();
   const all = useItems("mood", "checkin");
   const by = useMemo(() => new Map((all ?? []).map(e => [e.date!, e])), [all]);
-  return <><PageHead eyebrow="Mood · Month" title="The month in colour" /><MonthGrid month={month} setMonth={setMonth} selected={day} onPick={setDay} paint={d => moodColour(by.get(d)?.f.mood)} />
+  return <><PageHead eyebrow="Mood · Month" title="The month in colour" /><MonthGrid month={month} setMonth={setMonth} selected={day} onPick={d => { setDay(d); showSide("right"); }} paint={d => moodColour(by.get(d)?.f.mood)} />
     <div className="k-legend">{MOODS.map(m => <span key={m.v}><i style={{ background: m.c }} />{m.label}</span>)}</div></>;
 }
 export function MoodMonthRight() {

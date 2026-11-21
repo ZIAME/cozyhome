@@ -11,7 +11,7 @@ import { useShared } from "@/lib/shared";
 import { useLayout } from "@/room/useLayout";
 import { useDueToday } from "@/lib/due";
 import { TRACKER } from "@/room/catalogue";
-import { Board, DeleteButton, Empty, Form, ItemList, Jar, PageHead, Section, Tag, daysUntil, dueText, prettyDay, streaks, type Field } from "./kit";
+import { useShowSide, Board, DeleteButton, Empty, Form, ItemList, Jar, PageHead, Section, Tag, daysUntil, dueText, prettyDay, streaks, type Field } from "./kit";
 import { Photo } from "./mind";
 import { StreakToggle, useHideStreaks } from "./privacy";
 import { addElement } from "./scrapbook";
@@ -247,9 +247,10 @@ export function FitLogRight() {
 // ================= Hobbies =================
 export function HobbiesLeft() {
   const [, setOpen] = useShared("hob:open", "");
+  const showSide = useShowSide();
   return <><PageHead eyebrow="Hobbies · My hobbies" title="My hobbies" />
     <ItemList tracker="hobbies" kind="hobby" add="Add a hobby" empty="Calligraphy, baking, crochet…" fields={[{ key: "name", label: "Hobby", required: true }, { key: "why", label: "What you love about it" }]}
-      title={it => str(it.f.name)} meta={it => str(it.f.why)} actions={it => <button className="k-link" onClick={() => setOpen(str(it.f.name))}>Log →</button>} /></>;
+      title={it => str(it.f.name)} meta={it => str(it.f.why)} actions={it => <button className="k-link" onClick={() => { setOpen(str(it.f.name)); showSide("right"); }}>Log →</button>} /></>;
 }
 export function HobbiesRight() {
   const hobbies = names(useItems("hobbies", "hobby"));

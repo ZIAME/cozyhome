@@ -35,7 +35,6 @@ function PageSide({ sec, i, side }: { sec: string; i: number; side: "left" | "ri
   const Real = PAGES[sec]?.[tab.id]?.[side];
   return Real ? <Real /> : <Placeholder sec={sec} i={i} side={side} />;
 }
-const Both = ({ sec, i }: { sec: string; i: number }) => <><div className="cmb"><PageSide sec={sec} i={i} side="left" /></div><div className="cmb"><PageSide sec={sec} i={i} side="right" /></div></>;
 
 type Target = { sec: string; tab?: string } | null;
 
@@ -44,7 +43,9 @@ export function Diary({ target, onClosed }: { target: Target; onClosed: () => vo
   const [sec, setSec] = useState<string | null>(null);
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<"" | "show" | "open" | "opened">("");
-  const [flip, setFlip] = useState<{ from: number; to: number } | null>(null);
+  const [flip, setFlip] = useState<{ from: number; to: number; fromHalf: 0 | 1 } | null>(null);
+  /** Phones show one side of the spread at a time: 0 = left page, 1 = right page. */
+  const [half, setHalf] = useState<0 | 1>(0);
   const single = useMedia("(max-width:760px)");
   const busy = useRef(false);
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -52,7 +53,7 @@ export function Diary({ target, onClosed }: { target: Target; onClosed: () => vo
   useEffect(() => {
     if (!target) return;
     const S = SECTIONS[target.sec];
-    setSec(target.sec); setIdx(Math.max(0, S.tabs.findIndex(t => t.id === target.tab)));
+    setSec(target.sec); setHalf(0); setIdx(Math.max(0, S.tabs.findIndex(t => t.id === target.tab)));
     setPhase("show"); busy.current = true;
     const a = setTimeout(() => setPhase("open"), 300);
     const b = setTimeout(() => { setPhase("opened"); busy.current = false; tabsRef.current?.querySelector<HTMLButtonElement>(".tab.on")?.focus({ preventScroll: true }); }, 1350);
@@ -66,11 +67,16 @@ export function Diary({ target, onClosed }: { target: Target; onClosed: () => vo
     setTimeout(() => { setPhase(""); busy.current = false; setSec(null); onClosed(); }, 1000);
   }, [onClosed]);
 
-  const goto = useCallback((i: number) => {
+  /** Turn to another tab. On phones it opens on its left page (or its right page when going back by swipe). */
+  const goto = useCallback((i: number, toHalf: 0 | 1 = 0) => {
     if (busy.current || !sec || i === idx) return;
-    busy.current = true; setFlip({ from: idx, to: i }); setIdx(i);
+    busy.current = true; setFlip({ from: idx, to: i, fromHalf: half }); setIdx(i); setHalf(toHalf);
     setTimeout(() => { setFlip(null); busy.current = false; }, FLIP_MS + 20);
-  }, [sec, idx]);
+  }, [sec, idx, half]);
+
+  // on phones, a page can ask to show the other side (e.g. tapping a day in a calendar opens it on the left)
+  const [showSide, setShowSide] = useShared<null | "left" | "right">("diary:side", null);
+  useEffect(() => { if (!showSide) return; setHalf(showSide === "left" ? 0 : 1); setShowSide(null); }, [showSide, setShowSide]);
 
   // a page can ask the diary to turn to another tab (e.g. saving an image turns to the scrapbook)
   const [turnTo, setTurnTo] = useShared<string | null>("diary:goto", null);
@@ -94,12 +100,17 @@ export function Diary({ target, onClosed }: { target: Target; onClosed: () => vo
   const cls = ["show", "open", "opened"].slice(0, ["", "show", "open", "opened"].indexOf(phase)).join(" ");
 
   let left: React.ReactNode, right: React.ReactNode, leaf: React.ReactNode = null;
+  const sideOf = (h: 0 | 1) => (h ? "right" : "left") as "left" | "right";
   if (single) {
     left = null;
-    right = <Both sec={sec} i={flip ? (fwd ? flip.to : flip.from) : idx} />;
+    // during a tab turn, the page underneath is the one being revealed
+    right = flip && !fwd ? <PageSide sec={sec} i={flip.from} side={sideOf(flip.fromHalf)} />
+      : <div key={`${idx}-${half}`} className="half-in"><PageSide sec={sec} i={idx} side={sideOf(half)} /></div>;
     if (flip) leaf = (
       <div className={"leaf " + (fwd ? "fwd" : "bwd")} style={{ ["--fd" as string]: FLIP_MS + "ms" }}>
-        <div className="face front"><div className="pin">{fwd ? <Both sec={sec} i={flip.from} /> : <Both sec={sec} i={flip.to} />}</div></div>
+        <div className="face front"><div className={"pin" + (fwd ? (flip.fromHalf ? " lined" : "") : half ? " lined" : "")}>
+          {fwd ? <PageSide sec={sec} i={flip.from} side={sideOf(flip.fromHalf)} /> : <PageSide sec={sec} i={flip.to} side={sideOf(half)} />}
+        </div></div>
         {fwd && <div className="face back"><div className="pin" /></div>}
       </div>
     );
@@ -121,10 +132,17 @@ export function Diary({ target, onClosed }: { target: Target; onClosed: () => vo
       <div className="d-title">{S.title}<small>{S.sub}</small></div>
       <div className="book"
         onTouchStart={e => { x0.current = (e.target as Element).closest(".k-board, input, textarea, select, .i-board") ? null : e.touches[0].clientX; }}
-        onTouchEnd={e => { if (x0.current == null) return; const dx = e.changedTouches[0].clientX - x0.current; x0.current = null; if (Math.abs(dx) > 60) goto(dx < 0 ? Math.min(n - 1, idx + 1) : Math.max(0, idx - 1)); }}>
+        onTouchEnd={e => {
+          if (x0.current == null) return; const dx = e.changedTouches[0].clientX - x0.current; x0.current = null;
+          if (Math.abs(dx) < 60) return;
+          if (!single) { goto(dx < 0 ? Math.min(n - 1, idx + 1) : Math.max(0, idx - 1)); return; }
+          // phones read like a book: left page, right page, then the next tab
+          if (dx < 0) { if (half === 0) setHalf(1); else if (idx < n - 1) goto(idx + 1, 0); }
+          else { if (half === 1) setHalf(0); else if (idx > 0) goto(idx - 1, 1); }
+        }}>
         <div className="board" />
         <div className="page left"><div className="pin" id="pL">{left}</div></div>
-        <div className="page right"><div className={"pin" + (single ? "" : " lined")} id="pR">{right}</div></div>
+        <div className="page right"><div className={"pin" + (!single || half === 1 ? " lined" : "")} id="pR">{right}</div></div>
         <div className="rings" aria-hidden="true">{Array.from({ length: 6 }, (_, i) => <i key={i} />)}</div>
         <div className="tabs" role="tablist" ref={tabsRef}
           onKeyDown={e => {
@@ -141,6 +159,13 @@ export function Diary({ target, onClosed }: { target: Target; onClosed: () => vo
         </div>
         {leaf}
       </div>
+      {single && phase === "opened" && (
+        <nav className="half-nav" aria-label="Pages">
+          <button aria-label="Left page" disabled={half === 0} onClick={() => setHalf(0)}>‹</button>
+          <span aria-live="polite">{half === 0 ? "Left page" : "Right page"} · {half + 1} of 2</span>
+          <button aria-label="Right page" disabled={half === 1} onClick={() => setHalf(1)}>›</button>
+        </nav>
+      )}
     </div>
   );
 }

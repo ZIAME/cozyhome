@@ -698,7 +698,6 @@ label.bk-row{cursor:text}
 /* ===================== SCRAPBOOK ===================== */
 .sb-page{position:absolute;inset:0;container-type:inline-size;overflow:hidden;touch-action:none;
   background:radial-gradient(circle at 20% 15%,rgba(255,255,255,.5),transparent 40%),#FBF3E2}
-.cmb .sb-page{position:relative;inset:auto;aspect-ratio:3/4;border-radius:12px;margin-bottom:10px}
 .sb-hint{position:absolute;left:12%;right:12%;top:40%;text-align:center;font-family:var(--font-hand),cursive;font-size:6cqw;color:#B08A6A}
 .sb-el{position:absolute;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .sb-el:active{cursor:grabbing}
@@ -719,8 +718,7 @@ label.bk-row{cursor:text}
 .sb-h.rot::after{content:"";position:absolute;left:50%;top:100%;width:2px;height:8px;background:#D2692A;margin-left:-1px}
 .sb-tools{position:absolute;left:10px;right:10px;bottom:10px;z-index:9999;display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:16px;
   background:rgba(255,250,240,.96);box-shadow:0 8px 22px -10px rgba(58,35,22,.55),0 0 0 1.5px #EBD3B0}
-/* phones: the tools sit under the page, so they never cover what you are decorating */
-.cmb .sb-tools{position:relative;left:auto;right:auto;bottom:auto;margin:0 0 12px}
+
 .sb-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .sb-tool{font:inherit;font-weight:800;font-size:12.5px;border:1.5px solid #E2C59C;background:#FFFBF4;color:#5C3A22;border-radius:999px;padding:5px 11px;cursor:pointer}
 .sb-tool:hover{background:#FBE7CC}
@@ -737,3 +735,17 @@ label.bk-row{cursor:text}
 .sb-swatches button{width:20px;height:20px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #E2C59C;cursor:pointer;padding:0}
 .sb-swatches button.on{box-shadow:0 0 0 2px #3A2316}
 .sb-tool:focus-visible,.sb-thumb:focus-visible,.sb-step button:focus-visible,.sb-swatches button:focus-visible{outline:3px solid #E9A23B;outline-offset:2px}
+
+/* phones: one side of the spread at a time, with arrows to switch */
+.half-nav{position:absolute;left:50%;bottom:max(12px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:3;display:flex;align-items:center;gap:10px;
+  padding:6px 8px;border-radius:999px;background:var(--pill-bg);border:1px solid var(--pill-line);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 6px 18px -10px rgba(58,35,22,.45);color:var(--ink);font-family:var(--font-fredoka),var(--font-nunito),sans-serif;font-weight:600;font-size:13px;white-space:nowrap}
+.half-nav button{width:40px;height:40px;border-radius:50%;border:0;background:var(--ember);color:#FFF6E8;font-size:24px;line-height:1;cursor:pointer;box-shadow:0 3px 0 #A44A16}
+.half-nav button:disabled{background:#E2C59C;color:#FFF6E8;box-shadow:none;cursor:default}
+.half-nav button:focus-visible{outline:3px solid #E9A23B;outline-offset:2px}
+.half-in{animation:halfIn .28s ease both}
+@keyframes halfIn{from{opacity:0;transform:translateX(8px)}}
+@media (max-width:760px){
+  .book{--bh:min(calc(100svh - 190px),calc(var(--bw)*1.45))}
+  .sb-tools{max-height:52%;overflow:auto}
+}

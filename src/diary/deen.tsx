@@ -10,7 +10,7 @@ import { addItem, str, updateItem, useItems } from "@/lib/items";
 import { useShared } from "@/lib/shared";
 import { SURAHS, TOTAL_AYAHS } from "@/data/surahs";
 import { LIBRARY, type LibraryTopic } from "@/data/library";
-import { Board, DayNav, Empty, Form, ItemList, MonthGrid, PageHead, Section, Tag, monthStart, prettyDay, streaks, useDay } from "./kit";
+import { Board, DayNav, Empty, Form, ItemList, MonthGrid, PageHead, Section, Tag, monthStart, prettyDay, streaks, useDay, useShowSide } from "./kit";
 import { useHideStreaks, StreakToggle } from "./privacy";
 import { ReportMistake } from "@/components/Report";
 
@@ -80,6 +80,7 @@ const PERIOD = "#EBC3D3";
 const HEAT = ["#F3E2C8", "#F2D27A", "#EDB55B", "#E39543", "#D97B33", "#C0601F"];
 export function SalahRight() {
   const [day, setDay] = useDay("salah");
+  const showSide = useShowSide();
   const [month, setMonth] = useShared("salah:month", monthStart(todayStr()));
   const all = useLiveQuery(() => db.salah.toArray(), []);
   const hidden = useHideStreaks();
@@ -91,7 +92,7 @@ export function SalahRight() {
   return (
     <>
       <Section title="This month" aside={<StreakToggle />}>
-        <MonthGrid month={month} setMonth={setMonth} selected={day} onPick={d => d <= todayStr() && setDay(d)}
+        <MonthGrid month={month} setMonth={setMonth} selected={day} onPick={d => { if (d <= todayStr()) { setDay(d); showSide("left"); } }}
           paint={d => (period.has(d) ? PERIOD : by.has(d) ? HEAT[count(d)] : null)} label={d => `${prettyDay(d)}: ${period.has(d) ? "period" : `${count(d)} of 5`}`} />
         <div className="k-legend">{HEAT.map((c, i) => <span key={i}><i style={{ background: c }} />{i}</span>)}<span><i style={{ background: PERIOD }} />period</span></div>
       </Section>
