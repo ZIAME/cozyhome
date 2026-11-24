@@ -15,6 +15,8 @@ import { useSyncStatus } from "@/lib/sync";
 import { useTopicOfDay } from "@/lib/topic";
 
 const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
+/** The deployed commit (Vercel sets this when system environment variables are exposed), to tell which build a phone has. */
+const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7);
 
 type Props = { open: boolean; onClose: () => void; hasDeen: boolean; onEditDetails: () => void; onBackup: () => void };
 
@@ -35,7 +37,7 @@ export function SettingsSheet({ open, onClose, hasDeen, onEditDetails, onBackup 
       {profile && <YouSection profile={profile} save={save} onEditDetails={onEditDetails} />}
       {profile && hasDeen && <PrayerSection profile={profile} save={save} />}
 
-      {hasDeen && <NotifySection onBackup={onBackup} />}
+      <NotifySection onBackup={onBackup} hasDeen={hasDeen} onEditDetails={onEditDetails} />
 
       <section className="bk-sec">
         <h3>Privacy</h3>
@@ -57,7 +59,7 @@ export function SettingsSheet({ open, onClose, hasDeen, onEditDetails, onBackup 
           <button className="ghost-btn" onClick={() => setPage("privacy")}>Privacy</button>
           <ReportMistake className="ghost-btn" what="Something in the app" details="Where in the app:" />
         </div>
-        <p className="mnote">Cozy Home {VERSION}{CONTACT_EMAIL ? <> · <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></> : null}</p>
+        <p className="mnote">Cozy Home {VERSION}{BUILD ? ` · build ${BUILD}` : ""}{CONTACT_EMAIL ? <> · <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></> : null}</p>
       </section>
     </Modal>
   );
@@ -120,7 +122,7 @@ function PrayerSection({ profile, save }: { profile: Profile; save: (p: Profile)
 const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
 /** Daily topic notification: on/off and the time, for this device. */
-function NotifySection({ onBackup }: { onBackup: () => void }) {
+function NotifySection({ onBackup, hasDeen, onEditDetails }: { onBackup: () => void; hasDeen: boolean; onEditDetails: () => void }) {
   const sync = useSyncStatus();
   const [topic] = useTopicOfDay();
   const [support, setSupport] = useState<PushSupport>("off");
@@ -136,7 +138,8 @@ function NotifySection({ onBackup }: { onBackup: () => void }) {
     v ? `Done. You’ll get today’s topic at ${hhmm(time)} every day.` : "Daily notifications are off on this device.");
 
   let body: React.ReactNode;
-  if (support === "off") body = <p className="mnote">Daily notifications aren’t switched on in this version yet. Your topic is waiting in the Library each day.</p>;
+  if (!hasDeen) body = <div className="bk-row"><div><b>Daily research topic</b><small>Comes with the Deen tracker. Add Deen to your room to get a topic every day.</small></div><button className="ghost-btn" onClick={onEditDetails}>Add trackers</button></div>;
+  else if (support === "off") body = <p className="mnote">Daily notifications aren’t switched on in this version yet. Your topic is waiting in the Library each day.</p>;
   else if (support === "unsupported") body = <p className="mnote">This browser can’t show notifications. Try Chrome, or install the app to your Home Screen.</p>;
   else if (support === "ios-home-screen") body = <p className="mnote">On iPhone, notifications work from the app on your Home Screen: in Safari, tap Share → Add to Home Screen, open Cozy Home from there, and turn this on.</p>;
   else if (!sync.email) body = <div className="bk-row"><div><b>Sign in first</b><small>Notifications come through your account, so sign in to sync on this device.</small></div><button className="ghost-btn" onClick={onBackup}>Backup & sync</button></div>;
