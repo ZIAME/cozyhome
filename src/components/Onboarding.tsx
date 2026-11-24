@@ -7,6 +7,8 @@ import { FIVE, defaultsFor, prayerTimes, type Place, type PrayerName, type Praye
 import { fmtMin, todayStr } from "@/lib/dates";
 import type { Profile } from "@/lib/profile";
 import { TrackerIcon } from "./Arrange";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 import { SignInForm } from "./Backup";
 import { signOut, syncConfigured, syncNow, useSyncStatus } from "@/lib/sync";
 
@@ -90,6 +92,13 @@ export function Onboarding({ initial, onDone, onCancel }: Props) {
   );
 }
 
+/** What this browser still holds. Setting up a room again keeps all of it: only name, place and layout are asked. */
+function LocalData() {
+  const n = useLiveQuery(async () => ({ items: await db.items.count(), days: await db.salah.count() }), []);
+  if (!n || n.items + n.days === 0) return null;
+  return <p className="ob-warn" role="status">This browser still has <b>{n.items} entries</b> and <b>{n.days} prayer days</b>. Setting up a new room keeps all of them; it only asks your name, place and trackers again.</p>;
+}
+
 /** A device that is signed in but has no room yet: wait for the room to arrive from the cloud. */
 function WelcomeBack({ email, busy, error, onFresh }: { email: string; busy: boolean; error: string | null; onFresh: () => void }) {
   return (
@@ -98,6 +107,7 @@ function WelcomeBack({ email, busy, error, onFresh }: { email: string; busy: boo
         <section>
           <h1 id="obTitle">Welcome back</h1>
           <p className="ob-sub">Signed in as <b>{email}</b>.</p>
+          <LocalData />
           {busy ? <p className="ob-sub" role="status">Looking for your room…</p> : error ? <p className="ob-warn" role="status">{error}</p> : (
             <>
               <p className="ob-sub" role="status">Your room isn’t in the cloud yet.</p>
