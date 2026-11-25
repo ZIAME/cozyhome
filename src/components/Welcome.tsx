@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { googleEnabled, signOut, syncConfigured, syncNow, useSyncStatus } from "@/lib/sync";
+import { googleEnabled, resetSentTo, signOut, syncConfigured, syncNow, useSyncStatus } from "@/lib/sync";
+
+const BUILD = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7);
 import { CITIES } from "@/data/cities";
 import { db } from "@/lib/db";
 import { DEFAULT_SETTINGS, LUCKNOW, defaultsFor, type Place } from "@/lib/prayer";
@@ -89,9 +91,10 @@ export function Welcome({ onDone }: { onDone: (r: OnboardResult & { auto?: boole
       </div>
       <button className="ob-link wl-local" onClick={() => { writeIntent("local"); setScreen("local"); }}>Try it without an account</button>
       <p className="mnote">Without an account, your room lives only on this device.</p>
+      <p className="wl-build">{BUILD ? `build ${BUILD}` : "local build"} · Google sign-in {googleEnabled ? "on" : "off"}</p>
     </Card>
   );
-  return <AuthScreen intent={screen} onBack={() => { writeIntent(null); setScreen("choose"); }} />;
+  return <AuthScreen intent={screen} onBack={() => { writeIntent(null); resetSentTo(); setScreen("choose"); }} />;
 }
 
 function AuthScreen({ intent, onBack }: { intent: "signup" | "signin"; onBack: () => void }) {

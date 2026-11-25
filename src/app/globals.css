@@ -762,3 +762,4 @@ label.bk-row{cursor:text}
 .wl-or{display:flex;align-items:center;gap:10px;margin:12px 0;font-weight:700;font-size:12.5px;color:#9A6B45}
 .wl-or::before,.wl-or::after{content:"";flex:1;height:1.5px;background:#EBD3B0}
 .wl-choices .primary:focus-visible,.wl-second:focus-visible,.wl-google:focus-visible{outline:3px solid #E9A23B;outline-offset:3px}
+.wl-build{margin-top:10px;font-weight:700;font-size:11px;color:#B8957A;text-align:center}
