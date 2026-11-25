@@ -70,7 +70,7 @@ export function Onboarding({ initial, onDone, onCancel }: Props) {
           <h1 id="obTitle">{editing ? "Your details" : "Welcome home"}</h1>
           <p className="ob-sub">What should we call you? It goes on your wall and in your greeting.</p>
           <input className="ob-input" value={name} maxLength={40} autoComplete="given-name" placeholder="Your name" aria-label="Your name" onChange={e => setName(e.target.value)} />
-          {!editing && syncConfigured && <HaveARoom />}
+          {!editing && syncConfigured && !sync.email && <HaveARoom />}
         </section>}
 
         {step === 1 && <TrackerStep picked={picked} setPicked={setPicked} />}
