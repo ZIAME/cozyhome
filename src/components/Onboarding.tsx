@@ -7,10 +7,6 @@ import { FIVE, defaultsFor, prayerTimes, type Place, type PrayerName, type Praye
 import { fmtMin, todayStr } from "@/lib/dates";
 import type { Profile } from "@/lib/profile";
 import { TrackerIcon } from "./Arrange";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
-import { SignInForm } from "./Backup";
-import { signOut, syncConfigured, syncNow, useSyncStatus } from "@/lib/sync";
 
 export type OnboardResult = { profile: Profile; picked: string[] };
 type Props = {
@@ -18,6 +14,10 @@ type Props = {
   initial?: { profile: Profile; picked: string[] };
   onDone: (r: OnboardResult) => void;
   onCancel?: () => void;
+  /** A name to start with (from the sign-in), for a new account. */
+  initialName?: string;
+  /** Back to the welcome screen, from the first step. */
+  onBack?: () => void;
 };
 
 const placeLabel = (p: Place) => (p.country && COUNTRIES[p.country] ? `${p.name}, ${COUNTRIES[p.country]}` : p.name);
@@ -26,10 +26,10 @@ const placeLabel = (p: Place) => (p.country && COUNTRIES[p.country] ? `${p.name}
  * First run: your name, what you want to track, and where home is (with prayer settings if Deen is picked).
  * The fourth step, the room building itself, happens on the home screen once this closes.
  */
-export function Onboarding({ initial, onDone, onCancel }: Props) {
+export function Onboarding({ initial, onDone, onCancel, initialName, onBack }: Props) {
   const editing = !!initial;
   const [step, setStep] = useState(0);
-  const [name, setName] = useState(initial?.profile.name ?? "");
+  const [name, setName] = useState(initial?.profile.name ?? initialName ?? "");
   const [picked, setPicked] = useState<string[]>(initial?.picked ?? []);
   const [place, setPlace] = useState<Place | null>(initial?.profile.place ?? null);
   const [prayer, setPrayer] = useState<PrayerSettings>(initial?.profile.prayer ?? { method: "mwl", asr: "shafii", highLat: "middle", adjust: {} });
@@ -47,14 +47,9 @@ export function Onboarding({ initial, onDone, onCancel }: Props) {
     if (!place) return;
     onDone({ picked, profile: { v: 1, name: name.trim(), place, prayer, since: initial?.profile.since || todayStr() } });
   };
-  const sync = useSyncStatus();
-  const [fresh, setFresh] = useState(false); // signed in, but chose to set up a new room
   const steps = ["Name", "Trackers", "Home"];
   const canNext = [name.trim().length > 0, picked.length > 0, !!place][step];
   const next = () => { if (!canNext) return; if (step < 2) setStep(step + 1); else finish(); };
-
-  // Signed in on this device already: don't ask for a name; bring the room over from the cloud instead.
-  if (!editing && syncConfigured && sync.email && !fresh) return <WelcomeBack email={sync.email} busy={sync.busy || (sync.last === null && !sync.error)} error={sync.error} onFresh={() => setFresh(true)} />;
 
   return (
     <div id="onboard" role="dialog" aria-modal="true" aria-labelledby="obTitle">
@@ -70,7 +65,6 @@ export function Onboarding({ initial, onDone, onCancel }: Props) {
           <h1 id="obTitle">{editing ? "Your details" : "Welcome home"}</h1>
           <p className="ob-sub">What should we call you? It goes on your wall and in your greeting.</p>
           <input className="ob-input" value={name} maxLength={40} autoComplete="given-name" placeholder="Your name" aria-label="Your name" onChange={e => setName(e.target.value)} />
-          {!editing && syncConfigured && !sync.email && <HaveARoom />}
         </section>}
 
         {step === 1 && <TrackerStep picked={picked} setPicked={setPicked} />}
@@ -84,62 +78,10 @@ export function Onboarding({ initial, onDone, onCancel }: Props) {
         </section>}
 
         <div className="ob-nav">
-          {step > 0 ? <button className="ob-back" onClick={() => setStep(step - 1)}>Back</button> : <span />}
+          {step > 0 ? <button className="ob-back" onClick={() => setStep(step - 1)}>Back</button> : onBack ? <button className="ob-back" onClick={onBack}>Back</button> : <span />}
           <button className="primary" disabled={!canNext} onClick={next}>{step < 2 ? "Next" : editing ? "Save" : "Build my room"}</button>
         </div>
       </div>
-    </div>
-  );
-}
-
-/** What this browser still holds. Setting up a room again keeps all of it: only name, place and layout are asked. */
-function LocalData() {
-  const n = useLiveQuery(async () => ({ items: await db.items.count(), days: await db.salah.count() }), []);
-  if (!n || n.items + n.days === 0) return null;
-  return <p className="ob-warn" role="status">This browser still has <b>{n.items} entries</b> and <b>{n.days} prayer days</b>. Setting up a new room keeps all of them; it only asks your name, place and trackers again.</p>;
-}
-
-/** A device that is signed in but has no room yet: wait for the room to arrive from the cloud. */
-function WelcomeBack({ email, busy, error, onFresh }: { email: string; busy: boolean; error: string | null; onFresh: () => void }) {
-  return (
-    <div id="onboard" role="dialog" aria-modal="true" aria-labelledby="obTitle">
-      <div className="ob-card">
-        <section>
-          <h1 id="obTitle">Welcome back</h1>
-          <p className="ob-sub">Signed in as <b>{email}</b>.</p>
-          <LocalData />
-          {busy ? <p className="ob-sub" role="status">Looking for your room…</p> : error ? <p className="ob-warn" role="status">{error}</p> : (
-            <>
-              <p className="ob-sub" role="status">Your room isn’t in the cloud yet.</p>
-              <p className="mnote">On the device where you set it up, open <b>Drawer → Settings → Backup & sync</b> and tap <b>Sync now</b>. This page checks again every minute, and your room appears here by itself.</p>
-            </>
-          )}
-        </section>
-        <div className="ob-nav">
-          <div className="mrow">
-            <button className="ob-link" onClick={() => signOut()}>Not you? Sign out</button>
-            {!busy && <button className="ob-link" onClick={onFresh}>Set up a new room instead</button>}
-          </div>
-          <button className="primary" disabled={busy} onClick={() => syncNow()}>{busy ? "Checking…" : "Check again"}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * For a second device: sign in instead of starting over. Once the first sync brings the profile down,
- * onboarding closes by itself and the room appears.
- */
-function HaveARoom() {
-  const [open, setOpen] = useState(false);
-  const s = useSyncStatus();
-  return (
-    <div className="ob-have">
-      {!open && !s.email ? <button className="ob-link" onClick={() => setOpen(true)}>Already have a room on another device? Sign in</button> : <>
-        <p className="mnote"><b>Bring your room here.</b> Sign in with the email you use for sync on your other device.</p>
-        <SignInForm />
-      </>}
     </div>
   );
 }

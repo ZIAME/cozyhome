@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { askPersistence, backupFile, isPersisted, lastBackup, parseBackup, restoreBackup, type Backup, type BackupSummary } from "@/lib/backup";
-import { deleteCloudAccount, resetSentTo, sendSignIn, signOut, syncNow, useSyncStatus, verifyCode } from "@/lib/sync";
+import { deleteCloudAccount, resetSentTo, sendSignIn, signOutAndClear, syncNow, useSyncStatus, verifyCode } from "@/lib/sync";
 import { Modal } from "./Arrange";
 
 const ago = (t: number | string | null) => {
@@ -119,17 +119,17 @@ function SyncSection() {
         <button className="mbtn" disabled={s.busy} onClick={() => syncNow()}>{s.busy ? "Syncing…" : "Sync now"}</button>
       </div>
       <div className="mrow">
-        <button className="ghost-btn" onClick={() => run(signOut)}>Sign out</button>
+        <Confirm label="Sign out" sure="Tap again to sign out" onGo={() => run(signOutAndClear)} />
         <Confirm className="ghost-btn red" label="Delete my cloud data" sure="Tap again: delete account and cloud data" onGo={() => run(deleteCloudAccount, "Your account and everything in the cloud are deleted. This device still has your data.")} />
       </div>
-      <p className="mnote">Signing out keeps everything on this device. Deleting removes your account and everything stored in the cloud, photos included.</p>
+      <p className="mnote">Signing out saves everything to your account first, then removes your room from this device. Sign in again to get it back. Deleting removes your account and everything stored in the cloud, photos included.</p>
       {msg && <p className="mnote" role="status">{msg}</p>}
     </section>
   );
 }
 
 /** Email sign-in: ask for a link, then open it (or type a code, when the email has one). */
-export function SignInForm() {
+export function SignInForm({ cta = "Email me a sign-in link" }: { cta?: string }) {
   const s = useSyncStatus();
   const [email, setEmail] = useState(""), [code, setCode] = useState("");
   const [showCode, setShowCode] = useState(false);
@@ -141,7 +141,7 @@ export function SignInForm() {
       {!s.sentTo ? (
         <form className="bk-form" onSubmit={e => { e.preventDefault(); run(() => sendSignIn(email.trim())); }}>
           <input className="ob-input" type="email" required autoComplete="email" placeholder="you@example.com" aria-label="Email" value={email} onChange={e => setEmail(e.target.value)} />
-          <button className="mbtn" disabled={wait || !email.includes("@")}>Email me a sign-in link</button>
+          <button className="mbtn" disabled={wait || !email.includes("@")}>{cta}</button>
         </form>
       ) : (
         <div className="bk-form">

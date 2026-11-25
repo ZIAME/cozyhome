@@ -23,6 +23,7 @@ import { Sheet } from "./Sheet";
 import { TimePreview } from "./TimePreview";
 import { ArrangeBar, ArrangeIcon, DrawerSheet, SpotSheet } from "./Arrange";
 import { Onboarding, type OnboardResult } from "./Onboarding";
+import { Welcome } from "./Welcome";
 import { BackupSheet } from "./Backup";
 import { clearNotice, useAutoSync, useSyncStatus } from "@/lib/sync";
 import { useTopicOfDay } from "@/lib/topic";
@@ -84,12 +85,17 @@ export function Home() {
   }, [ready, hasDeen, reveal, onboarding, today, topic.title]);
 
   /** Save onboarding (or edited details), set the room up for the picks, and let the room build itself the first time. */
-  const finishOnboarding = useCallback(({ profile: p, picked }: OnboardResult) => {
+  const finishOnboarding = useCallback(({ profile: p, picked, auto }: OnboardResult & { auto?: boolean }) => {
     const first = !profile;
     saveProfile(p);
     save(applyPicks(layout, theme, picked));
     setEditing(false);
-    if (first) { askPersistence().catch(() => {}); setReveal(true); setTimeout(() => setReveal(false), 4200); setTimeout(() => showToast(`Welcome home, ${p.name} ✨`), 1900); }
+    if (first) {
+      askPersistence().catch(() => {}); setReveal(true); setTimeout(() => setReveal(false), 4200);
+      setTimeout(() => showToast(auto
+        ? `Welcome, ${p.name}. There was no saved room on this account, so here’s a fresh one. Change your place or trackers in Settings.`
+        : `Welcome home, ${p.name} ✨`), 1900);
+    }
   }, [profile, saveProfile, save, layout, theme]);
 
   function showToast(msg: string) { setToast(msg); }
@@ -171,8 +177,8 @@ export function Home() {
   return (
     <>
       <Sky sky={sky} P={P} min={min} />
-      {onboarding && <Onboarding key={editing ? "edit" : "new"} onDone={finishOnboarding}
-        initial={editing && profile ? { profile, picked: layout.picked } : undefined} onCancel={() => setEditing(false)} />}
+      {profileLoaded && !profile && <Welcome onDone={finishOnboarding} />}
+      {editing && profile && <Onboarding key="edit" onDone={finishOnboarding} initial={{ profile, picked: layout.picked }} onCancel={() => setEditing(false)} />}
       {ready && !(onboarding && !editing) && <>
       <main>
         <Header P={P} min={min} sky={sky} name={profile.name} showPrayer={hasDeen && !todayDay.period} />

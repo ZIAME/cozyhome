@@ -18,8 +18,14 @@ export type SyncStatus = {
   sentTo: string | null;
   /** A one-off message for the person, e.g. after coming back from a sign-in link. */
   notice: string | null;
+  /** The person's name from their sign-in (Google), when there is one. */
+  name: string | null;
+  /** The app has finished checking for a saved sign-in (so it knows whether someone is signed in). */
+  checked: boolean;
+  /** A sync has completed since the app opened (so "no room in the cloud" is known, not guessed). */
+  synced: boolean;
 };
-let st: SyncStatus = { configured: syncConfigured, email: null, busy: false, last: null, error: null, sentTo: null, notice: null };
+let st: SyncStatus = { configured: syncConfigured, email: null, busy: false, last: null, error: null, sentTo: null, notice: null, name: null, checked: !syncConfigured, synced: false };
 const subs = new Set<() => void>();
 const set = (p: Partial<SyncStatus>) => { st = { ...st, ...p }; subs.forEach(f => f()); };
 export const clearNotice = () => set({ notice: null });
@@ -42,7 +48,7 @@ export function syncNow(): Promise<void> {
       const sb = await supabase();
       const res = await syncOnce(new SupabaseRemote(sb, uid!), load());
       const last = Date.now();
-      save({ ...res.state, last }); set({ last });
+      save({ ...res.state, last }); set({ last, synced: true });
     } catch (e) {
       const m = e instanceof Error ? e.message : "";
       set({ error: /fetch|network|load failed/i.test(m) || !m ? "Couldn’t reach the sync service. It will try again." : `Sync failed: ${m}. It will try again.` });
@@ -66,19 +72,23 @@ export function useAutoSync() {
       : params.get("error_description")?.replace(/\+/g, " ") ?? null;
     const tidyUrl = () => { if (fromLink) history.replaceState(null, "", location.pathname); };
     supabase().then(sb => {
-      const apply = (u: { id: string; email?: string } | null) => {
+      const apply = (u: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null) => {
         const was = uid; uid = u?.id ?? null;
-        set({ email: u?.email ?? null, last: uid ? (JSON.parse(localStorage.getItem(stateKey()) || "{}").last ?? null) : null });
+        const meta = u?.user_metadata ?? {};
+        const name = typeof meta.full_name === "string" ? meta.full_name : typeof meta.name === "string" ? meta.name : null;
+        set({ email: u?.email ?? null, name, last: uid ? (JSON.parse(localStorage.getItem(stateKey()) || "{}").last ?? null) : null, ...(uid !== was ? { synced: false } : {}) });
         if (uid && uid !== was) syncNow();
       };
       sb.auth.getSession().then(({ data, error }) => {
         const u = data.session?.user ?? null;
         apply(u);
-        if (fromLink) set({ sentTo: null, notice: u ? `Signed in as ${u.email}. Your room is syncing.` : linkError ?? (error ? `Sign-in didn’t work: ${error.message}` : "That sign-in link didn’t work. Send yourself a new one.") });
+        set({ checked: true });
+        if (fromLink && !u) set({ sentTo: null, notice: linkError ?? (error ? `Sign-in didn’t work: ${error.message}` : "That sign-in link didn’t work. Send yourself a new one.") });
+        else if (fromLink) set({ sentTo: null });
         tidyUrl();
       });
       sb.auth.onAuthStateChange((_e, s) => apply(s?.user ?? null));
-    }).catch(() => {});
+    }).catch(() => set({ checked: true }));
     const kick = () => { if (document.visibilityState === "visible") syncNow(); };
     document.addEventListener("visibilitychange", kick);
     addEventListener("online", kick);
@@ -101,10 +111,33 @@ export async function verifyCode(email: string, code: string) {
   if (error) throw new Error(error.message);
   set({ sentTo: null });
 }
+/** Sign in with Google (when it's switched on in Supabase and NEXT_PUBLIC_AUTH_GOOGLE is "on"). Leaves and comes back. */
+export const googleEnabled = syncConfigured && (process.env.NEXT_PUBLIC_AUTH_GOOGLE ?? "") === "on";
+export async function signInWithGoogle() {
+  const sb = await supabase();
+  const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + location.pathname } });
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Sign out like any app: the room leaves this device, and the welcome screen comes back. Everything must be synced
+ * first, so nothing is lost; if the last sync fails, nothing is removed and the reason is given.
+ */
+export async function signOutAndClear() {
+  await syncNow();
+  if (st.error || !st.synced) throw new Error("Your latest changes haven’t reached your account yet, so nothing was removed. Check your connection, tap Sync now, and try again.");
+  const sb = await supabase();
+  await sb.auth.signOut();
+  const { db } = await import("../db");
+  await Promise.all([db.items.clear(), db.salah.clear(), db.settings.clear(), db.tombstones.clear()]);
+  try { for (const k of Object.keys(localStorage)) if (k.startsWith("cozy-")) localStorage.removeItem(k); } catch { /* private mode */ }
+  location.replace(location.pathname);
+}
+/** Sign out but keep this device's copy (used when sync isn't working and the person chooses to keep data here). */
 export async function signOut() {
   const sb = await supabase();
   await sb.auth.signOut();
-  set({ email: null, last: null, sentTo: null });
+  set({ email: null, last: null, sentTo: null, synced: false });
 }
 /** Remove everything from the cloud and the account itself. What's on this device stays. */
 export async function deleteCloudAccount() {
