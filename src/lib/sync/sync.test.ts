@@ -91,6 +91,25 @@ describe("sync", () => {
     expect((cloud.settings.get("profile")?.value as { name: string }).name).toBe("Afra");
   });
 
+  it("uploads prayer days and settings saved before change-stamping existed", async () => {
+    const cloud = new MemoryRemote();
+    // a device that has synced before (its tasks went up), with old records that never had a stamp
+    await addItem("planner", "task", { title: "old task" });
+    const s = (await syncOnce(cloud, FRESH)).state;
+    await db.salah.put(fromRemote({ date: "2026-11-10", p: { Fajr: "ontime", Isha: "late" }, x: {} }));
+    await db.settings.put(fromRemote({ key: "profile", value: { name: "Ziana" } }));
+    expect((await db.salah.get("2026-11-10"))?.updated).toBeUndefined();
+    await tick();
+    const r = await syncOnce(cloud, s);
+    expect(r.pushed).toBe(2);
+    expect(cloud.salah.get("2026-11-10")?.p).toEqual({ Fajr: "ontime", Isha: "late" });
+    expect(cloud.settings.get("profile")?.value).toEqual({ name: "Ziana" });
+    // and the phone gets them
+    await wipe();
+    await syncOnce(cloud, FRESH);
+    expect((await db.salah.get("2026-11-10"))?.p.Fajr).toBe("ontime");
+  });
+
   it("stamps local writes but keeps the cloud's stamp on pulled rows", async () => {
     await db.salah.put({ date: "2026-01-01", p: {}, x: {} });
     expect((await db.salah.get("2026-01-01"))?.updated).toBeGreaterThan(0);

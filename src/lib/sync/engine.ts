@@ -34,6 +34,18 @@ export type SyncResult = { state: SyncState; pushed: number; pulled: number };
 export const localOnly = (key: string) => key.startsWith("sync:") || key.startsWith("backup:") || key.startsWith("push:");
 
 /**
+ * Records saved before change-stamping existed (prayer days and settings from the first versions) have no `updated`,
+ * so they'd never look changed and never upload. Give them one now; the stamping hook sets it to the current time.
+ * Runs before every push, and costs almost nothing once everything is stamped.
+ */
+export async function stampUnstamped() {
+  const now = Date.now();
+  await db.salah.filter(d => !d.updated).modify(d => { d.updated = now; });
+  await db.settings.filter(s => !s.updated && !localOnly(s.key)).modify(s => { s.updated = now; });
+  await db.items.filter(i => !i.updated).modify(i => { i.updated = now; });
+}
+
+/**
  * One round of sync. Normally: push our changes, then pull theirs.
  * On a device's first sync for an account, pull first and let the cloud's settings (name, place, room layout…)
  * win, so signing in on a new device brings your room over instead of replacing it with the new device's.
@@ -45,6 +57,7 @@ export async function syncOnce(remote: Remote, state: SyncState): Promise<SyncRe
   const since = state.pushedAt;
 
   const push = async () => {
+    await stampUnstamped();
     const [items, tombs, salah, settings] = await Promise.all([
       db.items.where("updated").above(since).toArray(),
       db.tombstones.where("at").above(since).toArray(),
